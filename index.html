@@ -524,6 +524,47 @@
           </a>
           <a v-if="c.commission.email" :href="'mailto:'+c.commission.email" class="text-parchment/80 hover:text-white link-underline">{{ c.commission.email }}</a>
         </div>
+
+        <!-- Commission request form -->
+        <div v-if="c.commission.formEnabled" class="mt-12 max-w-xl mx-auto text-left">
+          <div class="glass-soft rounded-3xl p-6 sm:p-8">
+            <h3 class="font-display font-bold text-2xl text-center">{{ c.commission.formHeading }}</h3>
+            <p v-if="c.commission.formNote" class="text-parchment/70 text-sm text-center mt-2">{{ c.commission.formNote }}</p>
+
+            <div v-if="reqState !== 'sent'" class="mt-6 space-y-4">
+              <div class="grid sm:grid-cols-2 gap-4">
+                <label class="block"><span class="block text-sm font-semibold mb-1.5">Your name</span>
+                  <input v-model="req.name" type="text" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-parchment placeholder-parchment/40 focus:outline-none focus:border-gold" placeholder="Name" /></label>
+                <label class="block"><span class="block text-sm font-semibold mb-1.5">Email</span>
+                  <input v-model="req.email" type="email" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-parchment placeholder-parchment/40 focus:outline-none focus:border-gold" placeholder="you@email.com" /></label>
+              </div>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <label class="block"><span class="block text-sm font-semibold mb-1.5">What would you like?</span>
+                  <select v-model="req.type" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-parchment focus:outline-none focus:border-gold">
+                    <option v-for="t in c.commission.types" :key="t" :value="t" class="bg-abyss">{{ t }}</option>
+                  </select></label>
+                <label class="block"><span class="block text-sm font-semibold mb-1.5">Budget (optional)</span>
+                  <input v-model="req.budget" type="text" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-parchment placeholder-parchment/40 focus:outline-none focus:border-gold" placeholder="e.g. €50" /></label>
+              </div>
+              <label class="block"><span class="block text-sm font-semibold mb-1.5">Tell me about it</span>
+                <textarea v-model="req.message" rows="4" class="w-full rounded-xl bg-white/10 border border-white/15 px-4 py-3 text-parchment placeholder-parchment/40 focus:outline-none focus:border-gold" placeholder="Your character, the style you love, references, anything!"></textarea></label>
+
+              <p v-if="reqError" class="text-coral text-sm">{{ reqError }}</p>
+
+              <button @click="submitReq" :disabled="reqState==='sending'"
+                      class="w-full inline-flex items-center justify-center gap-2 rounded-full px-8 py-4 font-semibold text-abyss bg-gradient-to-r from-teal to-gold2 shadow-xl hover:scale-[1.02] hover:brightness-110 disabled:opacity-60 disabled:hover:scale-100">
+                <span>{{ reqState==='sending' ? 'Sending…' : 'Send request' }}</span>
+                <svg v-if="reqState!=='sending'" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+
+            <div v-else class="mt-6 text-center py-8">
+              <div class="text-5xl mb-3">🎉</div>
+              <p class="text-lg text-parchment">{{ c.commission.successMessage }}</p>
+              <button @click="resetReq" class="mt-5 text-sm text-teal hover:text-white link-underline">Send another</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -548,7 +589,7 @@
 
 <script type="module">
   import { createApp, reactive, ref, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
-  import { DEFAULT_CONTENT, clone, subscribeContent, ytId } from './shared.js';
+  import { DEFAULT_CONTENT, clone, subscribeContent, ytId, submitRequest, forwardRequest } from './shared.js';
 
   const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -558,7 +599,7 @@
       const menu = ref(false);
 
       // hydrate from cloud/local, live
-      subscribeContent((data) => { Object.assign(c, data); });
+      subscribeContent((data) => { Object.assign(c, data); if (!req.type && c.commission && c.commission.types && c.commission.types.length) req.type = c.commission.types[0]; });
 
       const sparks = Array.from({ length: 16 }, (_, i) => ({
         i, x: Math.random() * 100, y: Math.random() * 100,
@@ -580,7 +621,27 @@
       const typeClass = (t) => ({ water: 'type-water', fire: 'type-fire', grass: 'type-grass' }[(t || '').toLowerCase()] || 'type-water');
       const mascotFor = (t) => ({ water: 'koi-mon', fire: 'ember-mon', grass: 'sprout-mon' }[(t || '').toLowerCase()] || 'koi-mon');
 
-      return { c, menu, sparks, aboutParagraphs, activeSocials, watchVideos, commissionLink, year, typeClass, mascotFor };
+      // ---- Commission request form ----
+      const req = reactive({ name: '', email: '', type: '', budget: '', message: '' });
+      const reqState = ref('idle');   // idle | sending | sent
+      const reqError = ref('');
+      const submitReq = async () => {
+        reqError.value = '';
+        reqState.value = 'sending';
+        const payload = { name: req.name, email: req.email, type: req.type, budget: req.budget, message: req.message };
+        const r = await submitRequest(payload);
+        if (!r.ok) { reqError.value = r.error || 'Could not send. Please try again.'; reqState.value = 'idle'; return; }
+        // optional email forward (Formspree etc.), non-blocking
+        if (c.commission && c.commission.notifyEndpoint) forwardRequest(c.commission.notifyEndpoint, payload);
+        reqState.value = 'sent';
+      };
+      const resetReq = () => {
+        req.name = ''; req.email = ''; req.type = ''; req.budget = ''; req.message = '';
+        reqError.value = ''; reqState.value = 'idle';
+      };
+
+      return { c, menu, sparks, aboutParagraphs, activeSocials, watchVideos, commissionLink, year, typeClass, mascotFor,
+               req, reqState, reqError, submitReq, resetReq };
     },
   });
 
