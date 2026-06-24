@@ -114,6 +114,53 @@
     <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-4">
       <p class="text-parchment/60 text-sm">Edit anything below, then hit <span class="text-gold font-semibold">Save changes</span>. Changes go live on the site instantly.</p>
 
+      <!-- ACCOUNT -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('account')">
+          <span class="font-display font-bold text-lg">Account &amp; login</span>
+          <span v-if="cloud && account.currentEmail" class="text-xs text-parchment/50 truncate">{{ account.currentEmail }}</span>
+          <svg class="w-5 h-5 ml-auto transition shrink-0" :class="open.account?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.account" class="px-5 sm:px-6 pb-6 space-y-5">
+
+          <div v-if="!cloud" class="glass-soft rounded-2xl p-4 text-sm text-parchment/75">
+            You're in <span class="text-gold font-semibold">local mode</span>. Changing the login email and password needs the cloud database connected first (Firebase). Once that's set up, you can manage the login right here.
+          </div>
+
+          <template v-else>
+            <p class="text-sm text-parchment/70">Signed in as <span class="text-gold font-semibold">{{ account.currentEmail || '…' }}</span></p>
+
+            <!-- feedback -->
+            <p v-if="account.msg" class="text-sm rounded-xl px-4 py-3 bg-teal/15 border border-teal/40 text-teal">{{ account.msg }}</p>
+            <p v-if="account.err" class="text-sm rounded-xl px-4 py-3 bg-coral/15 border border-coral/40 text-coral">{{ account.err }}</p>
+
+            <!-- change email -->
+            <div class="glass-soft rounded-2xl p-4 space-y-3">
+              <h4 class="font-display font-bold">Change email</h4>
+              <label class="block"><span class="lbl">New email</span><input v-model="account.newEmail" type="email" class="field" placeholder="new@email.com" autocomplete="off" /></label>
+              <label class="block"><span class="lbl">Current password (to confirm)</span><input v-model="account.emailPw" type="password" class="field" autocomplete="current-password" /></label>
+              <button @click="acctEmail" :disabled="account.busy" class="btn px-4 py-2 bg-gradient-to-r from-teal to-gold text-abyss hover:brightness-110 text-sm disabled:opacity-60">Send confirmation link</button>
+              <p class="text-xs text-parchment/50">A link is sent to the new address. The email changes only after you open that link, then log in with the new email.</p>
+            </div>
+
+            <!-- change password -->
+            <div class="glass-soft rounded-2xl p-4 space-y-3">
+              <h4 class="font-display font-bold">Change password</h4>
+              <label class="block"><span class="lbl">New password</span><input v-model="account.newPw" type="password" class="field" autocomplete="new-password" placeholder="at least 6 characters" /></label>
+              <label class="block"><span class="lbl">Repeat new password</span><input v-model="account.newPw2" type="password" class="field" autocomplete="new-password" /></label>
+              <label class="block"><span class="lbl">Current password (to confirm)</span><input v-model="account.pwPw" type="password" class="field" autocomplete="current-password" /></label>
+              <button @click="acctPassword" :disabled="account.busy" class="btn px-4 py-2 bg-gradient-to-r from-teal to-gold text-abyss hover:brightness-110 text-sm disabled:opacity-60">Update password</button>
+            </div>
+
+            <!-- reset -->
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <span class="text-sm text-parchment/60">Forgot the current password?</span>
+              <button @click="acctReset" :disabled="account.busy" class="btn px-4 py-2 glass-soft hover:bg-white/10 text-sm disabled:opacity-60">Email me a reset link</button>
+            </div>
+          </template>
+        </div>
+      </section>
+
       <!-- BRAND -->
       <section class="glass rounded-3xl overflow-hidden">
         <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('brand')">
@@ -418,7 +465,8 @@
 <script type="module">
   import { createApp, reactive, ref, computed, watch, nextTick, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
   import { DEFAULT_CONTENT, clone, loadContent, saveContent, uploadImage,
-           signIn, signOutUser, onAuth, isFirebaseConfigured } from './shared.js';
+           signIn, signOutUser, onAuth, isFirebaseConfigured,
+           currentUserEmail, changeEmail, changePassword, sendReset } from './shared.js';
 
   const FieldImage = {
     props: ['label', 'modelValue'],
@@ -478,7 +526,7 @@
       const dirty = ref(false);
       const toast = ref('');
       const ready = ref(false);
-      const open = reactive({ brand: true, hero: true, marq: false, art: true, cards: true, crew: true, about: false, watch: false, comm: false, social: false, foot: false });
+      const open = reactive({ account: true, brand: true, hero: true, marq: false, art: true, cards: true, crew: true, about: false, watch: false, comm: false, social: false, foot: false });
 
       let toastTimer;
       const flash = (msg) => { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 2600); };
@@ -511,6 +559,48 @@
 
       const logout = async () => { await signOutUser(); authed.value = false; ready.value = false; };
 
+      // ---- Account (cloud mode): change email / password ----
+      const account = reactive({
+        currentEmail: '', newEmail: '', emailPw: '',
+        newPw: '', newPw2: '', pwPw: '',
+        msg: '', err: '', busy: false,
+      });
+      const loadAccountEmail = async () => { account.currentEmail = await currentUserEmail(); };
+      onAuth(async (ok) => { if (ok && cloud) await loadAccountEmail(); });
+
+      const acctEmail = async () => {
+        account.msg = ''; account.err = '';
+        if (!account.newEmail) { account.err = 'Enter a new email.'; return; }
+        if (!account.emailPw) { account.err = 'Enter your current password to confirm.'; return; }
+        account.busy = true;
+        const r = await changeEmail(account.emailPw, account.newEmail.trim());
+        account.busy = false;
+        if (r.ok) { account.msg = r.message; account.newEmail = ''; account.emailPw = ''; }
+        else account.err = r.error;
+      };
+
+      const acctPassword = async () => {
+        account.msg = ''; account.err = '';
+        if (account.newPw.length < 6) { account.err = 'New password must be at least 6 characters.'; return; }
+        if (account.newPw !== account.newPw2) { account.err = 'New passwords do not match.'; return; }
+        if (!account.pwPw) { account.err = 'Enter your current password to confirm.'; return; }
+        account.busy = true;
+        const r = await changePassword(account.pwPw, account.newPw);
+        account.busy = false;
+        if (r.ok) { account.msg = r.message; account.newPw = ''; account.newPw2 = ''; account.pwPw = ''; }
+        else account.err = r.error;
+      };
+
+      const acctReset = async () => {
+        account.msg = ''; account.err = '';
+        const email = account.currentEmail;
+        if (!email) { account.err = 'No account email found.'; return; }
+        account.busy = true;
+        const r = await sendReset(email);
+        account.busy = false;
+        if (r.ok) account.msg = r.message; else account.err = r.error;
+      };
+
       const save = async () => {
         saving.value = true;
         try {
@@ -540,7 +630,8 @@
         window.addEventListener('beforeunload', (e) => { if (dirty.value) { e.preventDefault(); e.returnValue = ''; } });
       });
 
-      return { c, cloud, authed, login, saving, dirty, toast, open, doLogin, logout, save, toggle, move, addArt, addCard, addCrew, reset };
+      return { c, cloud, authed, login, saving, dirty, toast, open, doLogin, logout, save, toggle, move, addArt, addCard, addCrew, reset,
+               account, acctEmail, acctPassword, acctReset };
     },
   }).mount('#app');
 </script>
