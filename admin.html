@@ -161,6 +161,47 @@
         </div>
       </section>
 
+      <!-- REQUESTS -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('requests')">
+          <span class="font-display font-bold text-lg">Commission requests</span>
+          <span v-if="newRequestCount" class="text-xs font-bold px-2 py-0.5 rounded-full bg-coral text-white">{{ newRequestCount }} new</span>
+          <span v-else class="text-xs text-parchment/50">{{ requests.length }} total</span>
+          <svg class="w-5 h-5 ml-auto transition shrink-0" :class="open.requests?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.requests" class="px-5 sm:px-6 pb-6 space-y-3">
+          <p v-if="!cloud" class="glass-soft rounded-2xl p-4 text-sm text-parchment/75">
+            Requests sync through the cloud database. They'll appear here once Firebase is connected (it is, if the bar above says "Cloud sync on").
+          </p>
+          <p v-else-if="!requestsLoaded" class="text-sm text-parchment/50">Loading requests…</p>
+          <p v-else-if="!requests.length" class="text-sm text-parchment/60 py-4 text-center">No requests yet. When someone fills out the form on the site, it shows up here.</p>
+
+          <div v-for="r in requests" :key="r.id"
+               class="glass-soft rounded-2xl p-4 space-y-2"
+               :class="(r.status||'new')==='new' ? 'ring-1 ring-coral/50' : ''">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-display font-bold">{{ r.name || 'Someone' }}</span>
+              <span v-if="r.type" class="text-[11px] px-2 py-0.5 rounded-full bg-teal/20 text-teal">{{ r.type }}</span>
+              <span v-if="r.budget" class="text-[11px] px-2 py-0.5 rounded-full glass-soft">{{ r.budget }}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full"
+                    :class="{'bg-coral/25 text-coral':(r.status||'new')==='new','bg-white/10 text-parchment/60':r.status==='read','bg-teal/20 text-teal':r.status==='done'}">
+                {{ r.status || 'new' }}
+              </span>
+              <span class="text-xs text-parchment/40 ml-auto">{{ fmtDate(r._ts) }}</span>
+            </div>
+            <a :href="'mailto:'+r.email" class="text-sm text-gold hover:text-white link-underline break-all">{{ r.email }}</a>
+            <p class="text-sm text-parchment/85 whitespace-pre-wrap">{{ r.message }}</p>
+            <div class="flex items-center gap-2 flex-wrap pt-1">
+              <a :href="replyTo(r)" class="icon-btn glass-soft hover:bg-white/10 px-3 text-xs">Reply ✉</a>
+              <button v-if="(r.status||'new')!=='read'" @click="setRequestStatus(r,'read')" class="icon-btn glass-soft hover:bg-white/10 px-3 text-xs">Mark read</button>
+              <button v-if="r.status!=='done'" @click="setRequestStatus(r,'done')" class="icon-btn glass-soft hover:bg-teal/25 px-3 text-xs">Mark done</button>
+              <button v-if="(r.status||'new')!=='new'" @click="setRequestStatus(r,'new')" class="icon-btn glass-soft hover:bg-white/10 px-3 text-xs">Mark unread</button>
+              <button @click="removeRequest(r)" class="icon-btn glass-soft hover:bg-coral/30 px-3 text-xs ml-auto">Delete</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- BRAND -->
       <section class="glass rounded-3xl overflow-hidden">
         <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('brand')">
@@ -409,6 +450,29 @@
             <label class="block"><span class="lbl">Button link (optional)</span><input v-model="c.commission.ctaLink" class="field" placeholder="https://… or leave blank" /></label>
           </div>
           <label class="block"><span class="lbl">Contact email (used if no button link)</span><input v-model="c.commission.email" class="field" placeholder="hello@example.com" /></label>
+
+          <div class="border-t border-white/10 pt-4 mt-2 space-y-3">
+            <label class="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" v-model="c.commission.formEnabled" class="w-4 h-4 accent-teal" /> Show the request form on the site
+            </label>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="block"><span class="lbl">Form heading</span><input v-model="c.commission.formHeading" class="field" /></label>
+              <label class="block"><span class="lbl">Form note</span><input v-model="c.commission.formNote" class="field" /></label>
+            </div>
+            <label class="block"><span class="lbl">Success message (shown after sending)</span><textarea v-model="c.commission.successMessage" rows="2" class="field"></textarea></label>
+            <label class="block"><span class="lbl">Request types (one per line, shown in the dropdown)</span>
+              <textarea :value="(c.commission.types||[]).join('\n')" @input="c.commission.types = $event.target.value.split('\n').map(s=>s.trim()).filter(Boolean)" rows="4" class="field"></textarea>
+            </label>
+
+            <div class="glass-soft rounded-2xl p-4 space-y-2">
+              <span class="lbl">Email me each request (optional)</span>
+              <input v-model="c.commission.notifyEndpoint" class="field" placeholder="https://formspree.io/f/your-id" />
+              <p class="text-xs text-parchment/55 leading-relaxed">
+                Requests always appear in the inbox above. To <span class="text-gold">also get an email</span>, create a free form at
+                <span class="text-teal">formspree.io</span> (use the email where you want requests sent), then paste the form's endpoint URL here. Leave blank to skip emails.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -466,7 +530,8 @@
   import { createApp, reactive, ref, computed, watch, nextTick, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
   import { DEFAULT_CONTENT, clone, loadContent, saveContent, uploadImage,
            signIn, signOutUser, onAuth, isFirebaseConfigured,
-           currentUserEmail, changeEmail, changePassword, sendReset } from './shared.js';
+           currentUserEmail, changeEmail, changePassword, sendReset,
+           subscribeRequests, updateRequestStatus, deleteRequest } from './shared.js';
 
   const FieldImage = {
     props: ['label', 'modelValue'],
@@ -526,7 +591,7 @@
       const dirty = ref(false);
       const toast = ref('');
       const ready = ref(false);
-      const open = reactive({ account: true, brand: true, hero: true, marq: false, art: true, cards: true, crew: true, about: false, watch: false, comm: false, social: false, foot: false });
+      const open = reactive({ account: true, requests: true, brand: true, hero: true, marq: false, art: true, cards: true, crew: true, about: false, watch: false, comm: false, social: false, foot: false });
 
       let toastTimer;
       const flash = (msg) => { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 2600); };
@@ -567,6 +632,26 @@
       });
       const loadAccountEmail = async () => { account.currentEmail = await currentUserEmail(); };
       onAuth(async (ok) => { if (ok && cloud) await loadAccountEmail(); });
+
+      // ---- Commission requests inbox ----
+      const requests = ref([]);
+      let reqUnsub = null;
+      const requestsLoaded = ref(false);
+      const startRequests = async () => {
+        if (reqUnsub) return;
+        reqUnsub = await subscribeRequests((list) => { requests.value = list; requestsLoaded.value = true; });
+      };
+      onAuth(async (ok) => { if (ok) await startRequests(); });
+
+      const newRequestCount = computed(() => requests.value.filter(r => (r.status || 'new') === 'new').length);
+      const fmtDate = (ts) => { if (!ts) return ''; try { return new Date(ts).toLocaleString(); } catch { return ''; } };
+      const setRequestStatus = async (r, status) => { r.status = status; await updateRequestStatus(r.id, status); };
+      const removeRequest = async (r) => { if (!confirm('Delete this request?')) return; await deleteRequest(r.id); };
+      const replyTo = (r) => {
+        const subject = encodeURIComponent('Re: your commission request');
+        const body = encodeURIComponent('Hi ' + (r.name || '') + ',\n\nThanks for your request!\n\n');
+        return 'mailto:' + (r.email || '') + '?subject=' + subject + '&body=' + body;
+      };
 
       const acctEmail = async () => {
         account.msg = ''; account.err = '';
@@ -631,7 +716,8 @@
       });
 
       return { c, cloud, authed, login, saving, dirty, toast, open, doLogin, logout, save, toggle, move, addArt, addCard, addCrew, reset,
-               account, acctEmail, acctPassword, acctReset };
+               account, acctEmail, acctPassword, acctReset,
+               requests, requestsLoaded, newRequestCount, fmtDate, setRequestStatus, removeRequest, replyTo };
     },
   }).mount('#app');
 </script>
