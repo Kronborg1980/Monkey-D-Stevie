@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Studio admin · Strawhat Atelier</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 44'%3E%3Cellipse cx='32' cy='33' rx='30' ry='8' fill='%23F2C879'/%3E%3Cpath d='M12 33C12 17 21 9 32 9s20 8 20 24Z' fill='%23F4D08A'/%3E%3Cpath d='M12 30c8 5 32 5 40 0v4c-8 5-32 5-40 0Z' fill='%23E1483F'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: { abyss:'#0B1733', lagoon:'#15487A', teal:'#2BD4C9', gold:'#FFC24B', gold2:'#F4A23C', coral:'#FF5A5F', parchment:'#FDF6E9' },
+    fontFamily: { display:['"Baloo 2"','cursive'], body:['Outfit','sans-serif'], script:['Caveat','cursive'] },
+  }}};
+</script>
+<style>
+  body{
+    font-family:'Outfit',system-ui,sans-serif; color:var(--parchment,#FDF6E9);
+    background:
+      radial-gradient(1000px 600px at 85% -10%, rgba(255,194,75,.14), transparent 60%),
+      radial-gradient(900px 700px at 5% 0%, rgba(43,212,201,.13), transparent 55%),
+      linear-gradient(180deg,#0B1733 0%, #0a1228 100%);
+    background-attachment:fixed; min-height:100vh;
+  }
+  :root{ --parchment:#FDF6E9; --holo:linear-gradient(115deg,#ff6fd8,#a06bff 28%,#4fe0ff 55%,#7cffc4 78%,#ffd56b); }
+  [v-cloak]{ display:none; }
+  .glass{ background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));
+    backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%);
+    border:1px solid rgba(255,255,255,.14); box-shadow:0 16px 44px -18px rgba(0,0,0,.6); }
+  .glass-soft{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.10); }
+  .holo-edge{ position:relative; border-radius:1.25rem; padding:1.4px; background:var(--holo); background-size:300% 100%; animation:holoShift 9s linear infinite; }
+  .holo-edge>.inner{ border-radius:calc(1.25rem - 1.4px); overflow:hidden; }
+  @keyframes holoShift{ to{ background-position:300% 0; } }
+  input,textarea,select{ font-family:inherit; }
+  .field{ width:100%; border-radius:.75rem; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12);
+    padding:.62rem .85rem; color:var(--parchment); outline:none; transition:.2s; }
+  .field:focus{ border-color:#FFC24B; box-shadow:0 0 0 3px rgba(255,194,75,.22); }
+  .lbl{ display:block; font-size:.8rem; font-weight:500; color:rgba(253,246,233,.7); margin-bottom:.4rem; }
+  .btn{ border-radius:.75rem; font-weight:600; transition:.2s; }
+  .icon-btn{ display:grid; place-items:center; width:2.1rem; height:2.1rem; border-radius:.6rem; }
+  .toast-enter-active,.toast-leave-active{ transition:all .3s ease; }
+  .toast-enter-from,.toast-leave-to{ opacity:0; transform:translateY(10px); }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; } }
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <!-- ====== LOGIN GATE ====== -->
+  <div v-if="!authed" class="min-h-screen grid place-items-center px-5">
+    <div class="holo-edge w-full max-w-md">
+      <div class="inner glass p-8 sm:p-10">
+        <div class="flex items-center gap-3 mb-6">
+          <straw-hat class="w-11 h-11"></straw-hat>
+          <div>
+            <h1 class="font-display font-extrabold text-2xl leading-none">Studio admin</h1>
+            <p class="font-script text-gold text-lg leading-none mt-0.5">welcome back, captain</p>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <label v-if="cloud" class="block">
+            <span class="lbl">Email</span>
+            <input v-model="login.email" type="email" class="field" placeholder="you@example.com" @keyup.enter="doLogin" />
+          </label>
+          <label class="block">
+            <span class="lbl">{{ cloud ? 'Password' : 'Studio passcode' }}</span>
+            <input v-model="login.pw" type="password" class="field" :placeholder="cloud ? '••••••••' : 'passcode'" @keyup.enter="doLogin" />
+          </label>
+          <p v-if="login.err" class="text-coral text-sm">{{ login.err }}</p>
+          <button @click="doLogin" :disabled="login.busy"
+                  class="btn w-full py-3 text-abyss bg-gradient-to-r from-gold to-gold2 hover:brightness-110 disabled:opacity-60">
+            {{ login.busy ? 'Hoisting the sails…' : 'Sign in' }}
+          </button>
+        </div>
+
+        <p class="mt-6 text-xs text-parchment/50 leading-relaxed">
+          <template v-if="cloud">Signed-in editing is saved to the cloud for everyone.</template>
+          <template v-else>Running in local mode — edits save to this browser only. Add your Firebase config in <code class="text-gold/80">config.js</code> to sync everywhere.</template>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== EDITOR ====== -->
+  <div v-else class="pb-32">
+    <!-- top bar -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-abyss/70 border-b border-white/10">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+        <straw-hat class="w-8 h-8 shrink-0"></straw-hat>
+        <div class="min-w-0">
+          <h1 class="font-display font-bold text-lg leading-none truncate">Studio admin</h1>
+          <span class="text-xs" :class="cloud ? 'text-teal' : 'text-gold'">
+            {{ cloud ? '● Cloud sync on' : '● Saving to this browser' }}
+          </span>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <a href="./index.html" target="_blank" class="btn px-3 sm:px-4 py-2 glass-soft hover:bg-white/10 text-sm">View site ↗</a>
+          <button @click="save" :disabled="saving"
+                  class="btn px-4 sm:px-5 py-2 text-abyss bg-gradient-to-r from-gold to-gold2 hover:brightness-110 disabled:opacity-60 text-sm flex items-center gap-2">
+            <span v-if="dirty && !saving" class="w-1.5 h-1.5 rounded-full bg-coral"></span>
+            {{ saving ? 'Saving…' : (dirty ? 'Save changes' : 'Saved') }}
+          </button>
+          <button @click="logout" class="btn icon-btn glass-soft hover:bg-white/10" title="Sign out">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+      <p class="text-parchment/60 text-sm">Edit anything below, then hit <span class="text-gold font-semibold">Save changes</span>. Changes go live on the site instantly.</p>
+
+      <!-- BRAND -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('brand')">
+          <span class="font-display font-bold text-lg">Brand & logo</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.brand?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.brand" class="px-5 sm:px-6 pb-6 space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Studio name</span><input v-model="c.brand.name" class="field" /></label>
+            <label class="block"><span class="lbl">Tagline / "by" line</span><input v-model="c.brand.by" class="field" /></label>
+          </div>
+          <field-image label="Logo" v-model="c.brand.logo"></field-image>
+        </div>
+      </section>
+
+      <!-- HERO -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('hero')">
+          <span class="font-display font-bold text-lg">Hero (top of page)</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.hero?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.hero" class="px-5 sm:px-6 pb-6 space-y-4">
+          <label class="block"><span class="lbl">Eyebrow (small line above title)</span><input v-model="c.hero.eyebrow" class="field" /></label>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Title line 1</span><input v-model="c.hero.titleLine1" class="field" /></label>
+            <label class="block"><span class="lbl">Title line 2 (rainbow)</span><input v-model="c.hero.titleLine2" class="field" /></label>
+          </div>
+          <label class="block"><span class="lbl">Subtitle</span><textarea v-model="c.hero.subtitle" rows="3" class="field"></textarea></label>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Primary button text</span><input v-model="c.hero.primaryCtaText" class="field" /></label>
+            <label class="block"><span class="lbl">Primary button link</span><input v-model="c.hero.primaryCtaLink" class="field" placeholder="#commission or https://…" /></label>
+            <label class="block"><span class="lbl">Secondary button text</span><input v-model="c.hero.secondaryCtaText" class="field" /></label>
+            <label class="block"><span class="lbl">Secondary button link</span><input v-model="c.hero.secondaryCtaLink" class="field" placeholder="#art" /></label>
+          </div>
+          <label class="block"><span class="lbl">Top button text (nav)</span><input v-model="c.nav.ctaText" class="field" /></label>
+          <label class="block"><span class="lbl">Top button link (nav)</span><input v-model="c.nav.ctaLink" class="field" /></label>
+        </div>
+      </section>
+
+      <!-- MARQUEE -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('marq')">
+          <span class="font-display font-bold text-lg">Scrolling words</span>
+          <span class="text-xs text-parchment/50">{{ c.marquee.length }}</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.marq?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.marq" class="px-5 sm:px-6 pb-6 space-y-2">
+          <div v-for="(m,i) in c.marquee" :key="i" class="flex items-center gap-2">
+            <input v-model="c.marquee[i]" class="field" />
+            <button @click="c.marquee.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30 shrink-0" title="Remove">✕</button>
+          </div>
+          <button @click="c.marquee.push('New word')" class="btn px-4 py-2 glass-soft hover:bg-white/10 text-sm mt-1">+ Add word</button>
+        </div>
+      </section>
+
+      <!-- ART -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('art')">
+          <span class="font-display font-bold text-lg">Art gallery</span>
+          <span class="text-xs text-parchment/50">{{ c.art.items.length }} pieces</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.art?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.art" class="px-5 sm:px-6 pb-6 space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Section heading</span><input v-model="c.art.heading" class="field" /></label>
+            <label class="block"><span class="lbl">Section subheading</span><input v-model="c.art.subheading" class="field" /></label>
+          </div>
+          <div v-for="(a,i) in c.art.items" :key="a.id" class="glass-soft rounded-2xl p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="font-display font-bold">{{ a.title || 'Untitled' }}</span>
+              <div class="ml-auto flex items-center gap-1">
+                <button @click="move(c.art.items,i,-1)" class="icon-btn glass-soft hover:bg-white/10" title="Move up">↑</button>
+                <button @click="move(c.art.items,i,1)" class="icon-btn glass-soft hover:bg-white/10" title="Move down">↓</button>
+                <button @click="c.art.items.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30" title="Delete">✕</button>
+              </div>
+            </div>
+            <field-image label="Image" v-model="a.image"></field-image>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="block"><span class="lbl">Title</span><input v-model="a.title" class="field" /></label>
+              <label class="block"><span class="lbl">Medium</span><input v-model="a.medium" class="field" /></label>
+              <label class="block"><span class="lbl">Price</span><input v-model="a.price" class="field" /></label>
+              <label class="block"><span class="lbl">Status</span>
+                <select v-model="a.status" class="field"><option>Available</option><option>Sold</option><option>Reserved</option></select>
+              </label>
+            </div>
+            <label class="block"><span class="lbl">Buy link (optional — leave blank to send to commissions)</span><input v-model="a.link" class="field" placeholder="https://…" /></label>
+          </div>
+          <button @click="addArt" class="btn px-4 py-2 bg-gradient-to-r from-teal to-gold text-abyss hover:brightness-110 text-sm">+ Add artwork</button>
+        </div>
+      </section>
+
+      <!-- CARDS -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('cards')">
+          <span class="font-display font-bold text-lg">Custom cards</span>
+          <span class="text-xs text-parchment/50">{{ c.cards.items.length }} styles</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.cards?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.cards" class="px-5 sm:px-6 pb-6 space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Section heading</span><input v-model="c.cards.heading" class="field" /></label>
+            <label class="block"><span class="lbl">Section subheading</span><input v-model="c.cards.subheading" class="field" /></label>
+          </div>
+          <div v-for="(card,i) in c.cards.items" :key="card.id" class="glass-soft rounded-2xl p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="font-display font-bold">{{ card.title || 'Untitled' }}</span>
+              <div class="ml-auto flex items-center gap-1">
+                <button @click="move(c.cards.items,i,-1)" class="icon-btn glass-soft hover:bg-white/10">↑</button>
+                <button @click="move(c.cards.items,i,1)" class="icon-btn glass-soft hover:bg-white/10">↓</button>
+                <button @click="c.cards.items.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30">✕</button>
+              </div>
+            </div>
+            <field-image label="Card image" v-model="card.image"></field-image>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="block"><span class="lbl">Title</span><input v-model="card.title" class="field" /></label>
+              <label class="block"><span class="lbl">Finish / rarity label</span><input v-model="card.rarity" class="field" /></label>
+              <label class="block"><span class="lbl">Price</span><input v-model="card.price" class="field" /></label>
+              <label class="block"><span class="lbl">Order link (optional)</span><input v-model="card.link" class="field" /></label>
+            </div>
+            <label class="block"><span class="lbl">Description</span><textarea v-model="card.description" rows="2" class="field"></textarea></label>
+          </div>
+          <button @click="addCard" class="btn px-4 py-2 bg-gradient-to-r from-teal to-gold text-abyss hover:brightness-110 text-sm">+ Add card style</button>
+
+          <div class="pt-4 mt-2 border-t border-white/10 space-y-3">
+            <label class="block"><span class="lbl">Process heading</span><input v-model="c.cards.process.heading" class="field" /></label>
+            <div v-for="(step,i) in c.cards.process.steps" :key="i" class="glass-soft rounded-2xl p-4 space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="font-display font-bold text-sm">Step {{ i+1 }}</span>
+                <div class="ml-auto flex items-center gap-1">
+                  <button @click="move(c.cards.process.steps,i,-1)" class="icon-btn glass-soft hover:bg-white/10">↑</button>
+                  <button @click="move(c.cards.process.steps,i,1)" class="icon-btn glass-soft hover:bg-white/10">↓</button>
+                  <button @click="c.cards.process.steps.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30">✕</button>
+                </div>
+              </div>
+              <label class="block"><span class="lbl">Step title</span><input v-model="step.title" class="field" /></label>
+              <label class="block"><span class="lbl">Step text</span><textarea v-model="step.text" rows="2" class="field"></textarea></label>
+            </div>
+            <button @click="c.cards.process.steps.push({title:'New step',text:''})" class="btn px-4 py-2 glass-soft hover:bg-white/10 text-sm">+ Add step</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- CREW -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('crew')">
+          <span class="font-display font-bold text-lg">Crew / characters</span>
+          <span class="text-xs text-parchment/50">{{ c.crew.items.length }} characters</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.crew?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.crew" class="px-5 sm:px-6 pb-6 space-y-4">
+          <div class="grid sm:grid-cols-3 gap-4">
+            <label class="block"><span class="lbl">Eyebrow</span><input v-model="c.crew.eyebrow" class="field" /></label>
+            <label class="block"><span class="lbl">Section heading</span><input v-model="c.crew.heading" class="field" /></label>
+            <label class="block"><span class="lbl">Button text</span><input v-model="c.crew.ctaText" class="field" /></label>
+          </div>
+          <label class="block"><span class="lbl">Section subheading</span><textarea v-model="c.crew.subheading" rows="2" class="field"></textarea></label>
+          <div v-for="(m,i) in c.crew.items" :key="m.id" class="glass-soft rounded-2xl p-4 space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="font-display font-bold">{{ m.name || 'Unnamed' }}</span>
+              <div class="ml-auto flex items-center gap-1">
+                <button @click="move(c.crew.items,i,-1)" class="icon-btn glass-soft hover:bg-white/10" title="Move up">↑</button>
+                <button @click="move(c.crew.items,i,1)" class="icon-btn glass-soft hover:bg-white/10" title="Move down">↓</button>
+                <button @click="c.crew.items.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30" title="Delete">✕</button>
+              </div>
+            </div>
+            <field-image label="Character art (leave blank to show a placeholder mascot)" v-model="m.image"></field-image>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="block"><span class="lbl">Name</span><input v-model="m.name" class="field" /></label>
+              <label class="block"><span class="lbl">Role / title</span><input v-model="m.role" class="field" /></label>
+              <label class="block"><span class="lbl">Type</span>
+                <select v-model="m.type" class="field"><option>Water</option><option>Fire</option><option>Grass</option></select>
+              </label>
+              <label class="block"><span class="lbl">HP</span><input v-model="m.hp" class="field" /></label>
+              <label class="block"><span class="lbl">Move 1</span><input v-model="m.move1" class="field" /></label>
+              <label class="block"><span class="lbl">Move 2</span><input v-model="m.move2" class="field" /></label>
+            </div>
+            <label class="block"><span class="lbl">Description</span><textarea v-model="m.blurb" rows="2" class="field"></textarea></label>
+          </div>
+          <button @click="addCrew" class="btn px-4 py-2 bg-gradient-to-r from-teal to-gold text-abyss hover:brightness-110 text-sm">+ Add character</button>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('about')">
+          <span class="font-display font-bold text-lg">About</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.about?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.about" class="px-5 sm:px-6 pb-6 space-y-4">
+          <label class="block"><span class="lbl">Heading</span><input v-model="c.about.heading" class="field" /></label>
+          <label class="block"><span class="lbl">Story (blank line = new paragraph)</span><textarea v-model="c.about.body" rows="6" class="field"></textarea></label>
+          <field-image label="Portrait image" v-model="c.about.image"></field-image>
+          <div>
+            <span class="lbl">Highlights</span>
+            <div class="space-y-2">
+              <div v-for="(st,i) in c.about.stats" :key="i" class="flex items-center gap-2">
+                <input v-model="st.value" class="field" style="max-width:7rem" placeholder="8+" />
+                <input v-model="st.label" class="field" placeholder="years drawing" />
+                <button @click="c.about.stats.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30 shrink-0">✕</button>
+              </div>
+            </div>
+            <button @click="c.about.stats.push({value:'',label:''})" class="btn px-4 py-2 glass-soft hover:bg-white/10 text-sm mt-2">+ Add highlight</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- WATCH -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('watch')">
+          <span class="font-display font-bold text-lg">Watch (YouTube)</span>
+          <span class="text-xs text-parchment/50">{{ c.watch.videos.length }} videos</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.watch?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.watch" class="px-5 sm:px-6 pb-6 space-y-4">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Heading</span><input v-model="c.watch.heading" class="field" /></label>
+            <label class="block"><span class="lbl">Subheading</span><input v-model="c.watch.subheading" class="field" /></label>
+          </div>
+          <label class="block"><span class="lbl">Channel link</span><input v-model="c.watch.channelUrl" class="field" /></label>
+          <div>
+            <span class="lbl">Featured videos (paste any YouTube / Shorts link)</span>
+            <div class="space-y-2">
+              <div v-for="(v,i) in c.watch.videos" :key="i" class="flex items-center gap-2">
+                <input v-model="v.id" class="field" placeholder="https://youtube.com/shorts/…" />
+                <button @click="move(c.watch.videos,i,-1)" class="icon-btn glass-soft hover:bg-white/10 shrink-0">↑</button>
+                <button @click="move(c.watch.videos,i,1)" class="icon-btn glass-soft hover:bg-white/10 shrink-0">↓</button>
+                <button @click="c.watch.videos.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30 shrink-0">✕</button>
+              </div>
+            </div>
+            <button @click="c.watch.videos.push({id:''})" class="btn px-4 py-2 glass-soft hover:bg-white/10 text-sm mt-2">+ Add video</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMMISSION -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('comm')">
+          <span class="font-display font-bold text-lg">Commission banner</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.comm?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.comm" class="px-5 sm:px-6 pb-6 space-y-4">
+          <label class="block"><span class="lbl">Heading</span><input v-model="c.commission.heading" class="field" /></label>
+          <label class="block"><span class="lbl">Body</span><textarea v-model="c.commission.body" rows="3" class="field"></textarea></label>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <label class="block"><span class="lbl">Button text</span><input v-model="c.commission.ctaText" class="field" /></label>
+            <label class="block"><span class="lbl">Button link (optional)</span><input v-model="c.commission.ctaLink" class="field" placeholder="https://… or leave blank" /></label>
+          </div>
+          <label class="block"><span class="lbl">Contact email (used if no button link)</span><input v-model="c.commission.email" class="field" placeholder="hello@example.com" /></label>
+        </div>
+      </section>
+
+      <!-- SOCIALS -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('social')">
+          <span class="font-display font-bold text-lg">Social links</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.social?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.social" class="px-5 sm:px-6 pb-6 space-y-2">
+          <p class="text-xs text-parchment/50 mb-2">Leave a link empty to hide that one from the site.</p>
+          <div v-for="(s,i) in c.socials" :key="i" class="flex items-center gap-2">
+            <input v-model="s.label" class="field" style="max-width:8rem" placeholder="Instagram" />
+            <input v-model="s.url" class="field" placeholder="https://…" />
+            <button @click="c.socials.splice(i,1)" class="icon-btn glass-soft hover:bg-coral/30 shrink-0">✕</button>
+          </div>
+          <button @click="c.socials.push({label:'',url:''})" class="btn px-4 py-2 glass-soft hover:bg-white/10 text-sm mt-1">+ Add social</button>
+        </div>
+      </section>
+
+      <!-- DEDICATION + FOOTER -->
+      <section class="glass rounded-3xl overflow-hidden">
+        <button class="w-full flex items-center gap-3 px-5 sm:px-6 py-4 text-left" @click="toggle('foot')">
+          <span class="font-display font-bold text-lg">Footer & dedication</span>
+          <svg class="w-5 h-5 ml-auto transition" :class="open.foot?'rotate-180':''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div v-show="open.foot" class="px-5 sm:px-6 pb-6 space-y-4">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" v-model="c.dedication.show" class="w-5 h-5 accent-gold" />
+            <span class="lbl mb-0">Show dedication line</span>
+          </label>
+          <label class="block"><span class="lbl">Dedication (handwritten style)</span><input v-model="c.dedication.text" class="field" /></label>
+          <label class="block"><span class="lbl">Footer note</span><input v-model="c.footer.text" class="field" /></label>
+        </div>
+      </section>
+
+      <!-- DANGER -->
+      <section class="rounded-3xl border border-coral/30 bg-coral/5 p-5 sm:p-6">
+        <h3 class="font-display font-bold text-lg text-coral/90">Reset</h3>
+        <p class="text-sm text-parchment/60 mt-1 mb-3">Restore all sections to the original example content. This can't be undone.</p>
+        <button @click="reset" class="btn px-4 py-2 border border-coral/40 text-coral hover:bg-coral/15 text-sm">Reset to defaults</button>
+      </section>
+    </main>
+  </div>
+
+  <!-- toast -->
+  <transition name="toast">
+    <div v-if="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass rounded-2xl px-5 py-3 font-medium shadow-2xl">
+      {{ toast }}
+    </div>
+  </transition>
+</div>
+
+<script type="module">
+  import { createApp, reactive, ref, computed, watch, nextTick, onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+  import { DEFAULT_CONTENT, clone, loadContent, saveContent, uploadImage,
+           signIn, signOutUser, onAuth, isFirebaseConfigured } from './shared.js';
+
+  const FieldImage = {
+    props: ['label', 'modelValue'],
+    emits: ['update:modelValue'],
+    data() { return { busy: false, err: '' }; },
+    methods: {
+      async pick(e) {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        this.busy = true; this.err = '';
+        try { this.$emit('update:modelValue', await uploadImage(f)); }
+        catch (x) { this.err = 'Upload failed — try pasting a URL instead.'; console.error(x); }
+        finally { this.busy = false; e.target.value = ''; }
+      },
+    },
+    template: `<div>
+      <span class="lbl">{{ label }}</span>
+      <div class="flex items-start gap-3">
+        <div class="w-20 h-20 rounded-xl overflow-hidden glass-soft shrink-0 grid place-items-center">
+          <img v-if="modelValue" :src="modelValue" class="w-full h-full object-cover" alt="" />
+          <span v-else class="text-parchment/40 text-xs text-center px-1">No image</span>
+        </div>
+        <div class="flex-1 space-y-2">
+          <input :value="modelValue" @input="$emit('update:modelValue',$event.target.value)" class="field" placeholder="Paste image URL…" />
+          <div class="flex items-center gap-3">
+            <label class="btn px-3 py-2 glass-soft hover:bg-white/10 text-sm cursor-pointer inline-flex items-center gap-2">
+              <input type="file" accept="image/*" class="hidden" @change="pick" />
+              {{ busy ? 'Uploading…' : 'Upload image' }}
+            </label>
+            <span v-if="err" class="text-coral text-xs">{{ err }}</span>
+          </div>
+        </div>
+      </div>
+    </div>`,
+  };
+
+  const StrawHat = {
+    template: `<svg viewBox="0 0 64 46" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="straw hat">
+      <ellipse cx="32" cy="35" rx="30" ry="8.5" fill="#E9B96A"/>
+      <ellipse cx="32" cy="33.5" rx="30" ry="8" fill="#F4D08A"/>
+      <path d="M13 34 C13 17 22 8 32 8 C42 8 51 17 51 34 Z" fill="#F4D08A"/>
+      <path d="M13 34 C13 17 22 8 32 8 C42 8 51 17 51 34 Z" fill="#FFE6AE" opacity=".5"/>
+      <g stroke="#D9A24E" stroke-width="1.1" opacity=".55" fill="none"><path d="M19 31 C24 14 40 14 45 31"/><path d="M23 31 C27 18 37 18 41 31"/></g>
+      <path d="M13 30 C21 35 43 35 51 30 L51 26 C43 31 21 31 13 26 Z" fill="#E1483F"/>
+      <path d="M13 30 C21 35 43 35 51 30 L51 28.5 C43 33.5 21 33.5 13 28.5 Z" fill="#C73A33"/>
+    </svg>`,
+  };
+
+  createApp({
+    components: { FieldImage, StrawHat },
+    setup() {
+      const c = reactive(clone(DEFAULT_CONTENT));
+      const cloud = isFirebaseConfigured();
+      const authed = ref(false);
+      const login = reactive({ email: '', pw: '', err: '', busy: false });
+      const saving = ref(false);
+      const dirty = ref(false);
+      const toast = ref('');
+      const ready = ref(false);
+      const open = reactive({ brand: true, hero: true, marq: false, art: true, cards: true, crew: true, about: false, watch: false, comm: false, social: false, foot: false });
+
+      let toastTimer;
+      const flash = (msg) => { toast.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.value = '', 2600); };
+
+      const hydrate = async () => {
+        const data = await loadContent();
+        Object.assign(c, data);
+        await nextTick();
+        ready.value = true;
+      };
+
+      onAuth(async (ok) => {
+        authed.value = ok;
+        if (ok && !ready.value) await hydrate();
+      });
+
+      watch(c, () => { if (ready.value) dirty.value = true; }, { deep: true });
+
+      const doLogin = async () => {
+        login.busy = true; login.err = '';
+        try {
+          const r = await signIn(login.email, login.pw);
+          if (!r.ok) { login.err = r.error || 'Could not sign in.'; return; }
+          // Local mode has no auth listener, so flip + hydrate here.
+          if (!cloud) { authed.value = true; if (!ready.value) await hydrate(); }
+        } catch (e) {
+          login.err = (e && e.code === 'auth/invalid-credential') ? 'Wrong email or password.' : 'Could not sign in.';
+        } finally { login.busy = false; }
+      };
+
+      const logout = async () => { await signOutUser(); authed.value = false; ready.value = false; };
+
+      const save = async () => {
+        saving.value = true;
+        try {
+          const r = await saveContent(c);
+          dirty.value = false;
+          flash(r.where === 'cloud' ? '✓ Saved — live for everyone' : '✓ Saved to this browser');
+        } catch (e) {
+          flash('Save failed — check your connection'); console.error(e);
+        } finally { saving.value = false; }
+      };
+
+      const toggle = (k) => { open[k] = !open[k]; };
+      const move = (arr, i, dir) => {
+        const j = i + dir; if (j < 0 || j >= arr.length) return;
+        const [it] = arr.splice(i, 1); arr.splice(j, 0, it);
+      };
+      const genId = () => 'x' + Math.random().toString(36).slice(2, 8);
+      const addArt = () => c.art.items.push({ id: genId(), image: '', title: 'New piece', medium: '', price: '', status: 'Available', link: '' });
+      const addCard = () => c.cards.items.push({ id: genId(), image: '', title: 'New card style', rarity: 'Holographic', description: '', price: 'from €', link: '' });
+      const addCrew = () => c.crew.items.push({ id: genId(), image: '', name: 'New character', role: '', type: 'Water', hp: '', blurb: '', move1: '', move2: '' });
+      const reset = () => { if (confirm('Reset everything to the original example content?')) { Object.assign(c, clone(DEFAULT_CONTENT)); dirty.value = true; flash('Reset — remember to Save'); } };
+
+      onMounted(() => {
+        window.addEventListener('keydown', (e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (authed.value) save(); }
+        });
+        window.addEventListener('beforeunload', (e) => { if (dirty.value) { e.preventDefault(); e.returnValue = ''; } });
+      });
+
+      return { c, cloud, authed, login, saving, dirty, toast, open, doLogin, logout, save, toggle, move, addArt, addCard, addCrew, reset };
+    },
+  }).mount('#app');
+</script>
+</body>
+</html>
