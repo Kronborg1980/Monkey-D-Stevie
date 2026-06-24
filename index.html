@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strawhat Atelier — art & custom cards by Gaming_ISH</title>
+<meta name="description" content="Original anime-style art and hand-finished custom trading cards. Commissions open." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 44'%3E%3Cellipse cx='32' cy='33' rx='30' ry='8' fill='%23F2C879'/%3E%3Cpath d='M12 33C12 17 21 9 32 9s20 8 20 24Z' fill='%23F4D08A'/%3E%3Cpath d='M12 30c8 5 32 5 40 0v4c-8 5-32 5-40 0Z' fill='%23E1483F'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          abyss: '#0B1733', lagoon: '#15487A', teal: '#2BD4C9',
+          gold: '#FFC24B', gold2: '#F4A23C', coral: '#FF5A5F', parchment: '#FDF6E9',
+        },
+        fontFamily: {
+          display: ['"Baloo 2"', 'cursive'],
+          body: ['Outfit', 'system-ui', 'sans-serif'],
+          script: ['Caveat', 'cursive'],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  :root{
+    --abyss:#0B1733; --teal:#2BD4C9; --gold:#FFC24B; --gold2:#F4A23C;
+    --coral:#FF5A5F; --parchment:#FDF6E9;
+    --holo:linear-gradient(115deg,#ff6fd8,#a06bff 28%,#4fe0ff 55%,#7cffc4 78%,#ffd56b);
+  }
+  *{ -webkit-tap-highlight-color:transparent; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:'Outfit',system-ui,sans-serif;
+    color:var(--parchment);
+    background:
+      radial-gradient(1200px 720px at 82% -12%, rgba(255,194,75,.20), transparent 60%),
+      radial-gradient(1000px 820px at 8% 6%, rgba(43,212,201,.18), transparent 55%),
+      radial-gradient(1200px 900px at 50% 122%, rgba(255,90,95,.14), transparent 60%),
+      linear-gradient(180deg,#0B1733 0%, #0a1430 42%, #090f22 100%);
+    background-attachment:fixed;
+    overflow-x:hidden;
+  }
+  [v-cloak]{ display:none; }
+  ::selection{ background:rgba(255,194,75,.35); }
+
+  .glass{
+    background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.035));
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+    border:1px solid rgba(255,255,255,.16);
+    box-shadow:0 18px 50px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.22);
+  }
+  .glass-soft{
+    background:linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    backdrop-filter:blur(12px) saturate(130%);
+    -webkit-backdrop-filter:blur(12px) saturate(130%);
+    border:1px solid rgba(255,255,255,.12);
+  }
+  /* Holographic gradient border wrapper */
+  .holo-edge{
+    position:relative; border-radius:1.5rem; padding:1.6px;
+    background:var(--holo); background-size:300% 100%;
+    animation:holoShift 9s linear infinite;
+    box-shadow:0 20px 60px -22px rgba(0,0,0,.7);
+  }
+  .holo-edge > .inner{ border-radius:calc(1.5rem - 1.6px); overflow:hidden; height:100%; }
+  @keyframes holoShift{ to{ background-position:300% 0; } }
+
+  .holo-text{
+    background:var(--holo); background-size:300% 100%;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:holoShift 8s linear infinite;
+  }
+  .gold-text{ color:var(--gold); }
+
+  /* Foil sweep on hover */
+  .foil{ position:relative; overflow:hidden; }
+  .foil::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(120deg,transparent 32%,rgba(255,255,255,.42) 50%,transparent 68%);
+    transform:translateX(-130%); transition:transform .8s ease;
+    mix-blend-mode:screen;
+  }
+  .foil:hover::after{ transform:translateX(130%); }
+
+  .lift{ transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease; }
+  .lift:hover{ transform:translateY(-7px); }
+
+  /* Holo placeholder for art with no image yet */
+  .holo-ph{
+    position:relative; background:
+      linear-gradient(135deg, rgba(255,111,216,.5), rgba(160,107,255,.5) 30%, rgba(79,224,255,.5) 60%, rgba(124,255,196,.5) 85%);
+    background-size:200% 200%; animation:phShift 10s ease infinite;
+  }
+  @keyframes phShift{ 0%,100%{background-position:0 0} 50%{background-position:100% 100%} }
+  .holo-ph::before{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 45%);
+    mix-blend-mode:overlay;
+  }
+
+  /* Sparkles */
+  .sparks{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .spark{ position:absolute; width:6px; height:6px; border-radius:50%;
+    background:radial-gradient(circle,#fff, rgba(255,255,255,0) 70%);
+    opacity:0; animation:twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle{
+    0%,100%{ opacity:0; transform:scale(.4) }
+    50%{ opacity:.9; transform:scale(1) }
+  }
+
+  /* Marquee */
+  .marq{ display:flex; gap:0; white-space:nowrap; width:max-content; animation:marq 26s linear infinite; }
+  .marq:hover{ animation-play-state:paused; }
+  @keyframes marq{ to{ transform:translateX(-50%); } }
+
+  /* Reveal: pure-CSS load-in. Always ends visible — never depends on JS. */
+  /* Reveal: gentle slide only. Never touches opacity, so content is ALWAYS
+     visible even if the animation never runs (mobile-safe). */
+  .reveal{ animation:riseIn .7s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes riseIn{ from{ transform:translateY(16px); } to{ transform:none; } }
+
+  .tilt{ transition:transform .2s ease; transform-style:preserve-3d; will-change:transform; }
+
+  .float{ animation:float 6s ease-in-out infinite; }
+  @keyframes float{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+  .ring-rot{ animation:spin 22s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  a, button{ transition:all .25s ease; }
+  .link-underline{ position:relative; }
+  .link-underline::after{ content:""; position:absolute; left:0; bottom:-4px; height:2px; width:0;
+    background:var(--gold); transition:width .25s ease; }
+  .link-underline:hover::after{ width:100%; }
+
+  /* ===== ANIME / MANGA KIT ===== */
+  /* Halftone screentone */
+  .halftone{ background-image:radial-gradient(rgba(255,255,255,.12) 1.4px, transparent 1.6px); background-size:11px 11px; }
+  .halftone-gold{ background-image:radial-gradient(rgba(255,194,75,.22) 1.5px, transparent 1.7px); background-size:13px 13px; }
+
+  /* Manga speed lines bursting from center */
+  .speedlines{ position:absolute; inset:-30%;
+    background:repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,.08) 0deg 1.3deg, transparent 1.3deg 4.2deg);
+    -webkit-mask:radial-gradient(circle, transparent 26%, #000 60%);
+            mask:radial-gradient(circle, transparent 26%, #000 60%);
+    animation:spin 60s linear infinite; pointer-events:none; }
+
+  /* Ocean wave drift */
+  .wave{ animation:waveDrift 11s ease-in-out infinite alternate; }
+  .wave-slow{ animation:waveDrift 17s ease-in-out infinite alternate-reverse; }
+  @keyframes waveDrift{ to{ transform:translateX(-34px); } }
+
+  /* Bobbing mascots */
+  .bob{ animation:bob 4.6s ease-in-out infinite; }
+  .bob2{ animation:bob 5.6s ease-in-out infinite .7s; }
+  .bob3{ animation:bob 6.4s ease-in-out infinite .3s; }
+  @keyframes bob{ 0%,100%{ transform:translateY(0) rotate(-4deg); } 50%{ transform:translateY(-13px) rotate(4deg); } }
+
+  /* Impact star (manga burst) */
+  .burst{ clip-path:polygon(50% 0,60% 34%,98% 34%,68% 56%,80% 92%,50% 70%,20% 92%,32% 56%,2% 34%,40% 34%); }
+
+  /* Pop badge with comic outline */
+  .pop-badge{ font-family:'Baloo 2',cursive; -webkit-text-stroke:1px rgba(11,23,51,.6); text-shadow:2px 2px 0 rgba(0,0,0,.25); }
+
+  /* Creature type chips */
+  .type-water{ background:linear-gradient(135deg,#4fe0ff,#2BD4C9); }
+  .type-fire{  background:linear-gradient(135deg,#FFC24B,#FF5A5F); }
+  .type-grass{ background:linear-gradient(135deg,#7cffc4,#2BD4C9); }
+
+  /* Comic-outline panel */
+  .panel{ border:2px solid rgba(255,255,255,.45); box-shadow:7px 7px 0 rgba(0,0,0,.32); }
+
+  /* Section wave divider */
+  .wave-div{ display:block; width:100%; height:60px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; }
+    html{ scroll-behavior:auto; }
+    .reveal{ opacity:1; transform:none; }
+    .foil:hover::after{ transform:translateX(130%); }
+  }
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <!-- ================= NAV ================= -->
+  <header class="fixed top-0 inset-x-0 z-50 px-4 sm:px-6 pt-3">
+    <nav class="glass max-w-6xl mx-auto rounded-2xl px-4 sm:px-5 py-3 flex items-center gap-4">
+      <a href="#top" class="flex items-center gap-2.5 min-w-0">
+        <span class="float"><straw-hat class="w-9 h-9 drop-shadow"></straw-hat></span>
+        <span class="leading-none min-w-0">
+          <span class="block font-display font-extrabold text-lg sm:text-xl truncate">{{ c.brand.name }}</span>
+          <span class="block font-script text-gold text-base -mt-0.5">{{ c.brand.by }}</span>
+        </span>
+      </a>
+      <div class="hidden md:flex items-center gap-7 ml-auto text-sm font-medium text-parchment/90">
+        <a v-for="l in c.nav.links" :key="l.href" :href="l.href" class="link-underline hover:text-white">{{ l.label }}</a>
+      </div>
+      <a :href="c.nav.ctaLink"
+         class="hidden sm:inline-flex ml-auto md:ml-0 items-center gap-2 rounded-full px-5 py-2.5 font-semibold text-abyss
+                bg-gradient-to-r from-gold to-gold2 shadow-lg shadow-amber-900/30 hover:brightness-110 hover:scale-[1.03]">
+        {{ c.nav.ctaText }}
+      </a>
+      <button class="md:hidden ml-auto sm:ml-0 p-2 rounded-lg glass-soft" @click="menu=!menu" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </nav>
+    <transition name="fade">
+      <div v-if="menu" class="glass max-w-6xl mx-auto mt-2 rounded-2xl p-4 md:hidden flex flex-col gap-1">
+        <a v-for="l in c.nav.links" :key="l.href" :href="l.href" @click="menu=false"
+           class="px-3 py-2.5 rounded-xl hover:bg-white/10 font-medium">{{ l.label }}</a>
+        <a :href="c.nav.ctaLink" @click="menu=false"
+           class="mt-1 text-center rounded-xl px-4 py-3 font-semibold text-abyss bg-gradient-to-r from-gold to-gold2">{{ c.nav.ctaText }}</a>
+      </div>
+    </transition>
+  </header>
+
+  <!-- ================= HERO ================= -->
+  <section id="top" class="relative pt-32 sm:pt-40 pb-24 sm:pb-32 px-5 sm:px-6 overflow-hidden">
+    <div class="speedlines" aria-hidden="true"></div>
+    <div class="absolute inset-0 halftone opacity-[.5] pointer-events-none" aria-hidden="true"></div>
+    <div class="sparks" aria-hidden="true">
+      <span v-for="s in sparks" :key="s.i" class="spark"
+            :style="{ left:s.x+'%', top:s.y+'%', animationDelay:s.d+'s', animationDuration:s.dur+'s', transform:'scale('+s.sc+')' }"></span>
+    </div>
+
+    <div class="relative max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_.9fr] gap-12 lg:gap-8 items-center">
+      <div class="reveal">
+        <p class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold tracking-wide uppercase text-teal/90 mb-5">
+          <span class="w-2 h-2 rounded-full bg-teal shadow-[0_0_12px_2px] shadow-teal/60"></span>
+          {{ c.hero.eyebrow }}
+        </p>
+        <h1 class="font-display font-extrabold leading-[1.02] text-[2.7rem] sm:text-6xl lg:text-[4.4rem]">
+          <span class="block text-parchment">{{ c.hero.titleLine1 }}</span>
+          <span class="block holo-text">{{ c.hero.titleLine2 }}</span>
+        </h1>
+        <p class="mt-6 text-base sm:text-lg text-parchment/80 max-w-xl leading-relaxed">{{ c.hero.subtitle }}</p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a :href="c.hero.primaryCtaLink"
+             class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-semibold text-abyss
+                    bg-gradient-to-r from-gold to-gold2 shadow-xl shadow-amber-900/30 hover:scale-[1.04] hover:brightness-110">
+            {{ c.hero.primaryCtaText }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a :href="c.hero.secondaryCtaLink"
+             class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-semibold glass-soft hover:bg-white/10">
+            {{ c.hero.secondaryCtaText }}
+          </a>
+        </div>
+
+        <div class="mt-8 flex items-center gap-4">
+          <span class="text-sm text-parchment/55">Find me on</span>
+          <div class="flex items-center gap-2">
+            <a v-for="s in activeSocials" :key="s.label" :href="s.url" target="_blank" rel="noopener"
+               class="px-3 py-1.5 rounded-full glass-soft text-sm hover:bg-white/10 hover:text-white">{{ s.label }}</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logo in holo glass frame, crew gathered around -->
+      <div class="reveal flex justify-center lg:justify-end">
+        <div class="relative">
+          <div class="absolute -inset-8 rounded-full opacity-60 blur-2xl"
+               style="background:radial-gradient(circle, rgba(255,194,75,.6), rgba(43,212,201,.4) 52%, transparent 72%)"></div>
+          <div class="ring-rot absolute -inset-3 rounded-[2.2rem] border border-white/15"
+               style="background:conic-gradient(from 0deg, transparent, rgba(255,255,255,.2), transparent 30%)"></div>
+          <div class="holo-edge float w-[15rem] h-[15rem] sm:w-[19rem] sm:h-[19rem]">
+            <div class="inner glass foil grid place-items-center p-3">
+              <img :src="c.brand.logo" alt="Artist logo"
+                   class="w-full h-full object-cover rounded-[1.1rem]" />
+            </div>
+          </div>
+
+          <!-- the crew, peeking around the frame (all screen sizes) -->
+          <koi-mon class="bob absolute -left-7 sm:-left-10 bottom-10 w-[4.5rem] sm:w-24 drop-shadow-[0_8px_16px_rgba(0,0,0,.5)]" aria-hidden="true"></koi-mon>
+          <ember-mon class="bob2 absolute -right-6 sm:-right-9 -top-5 w-[4.5rem] sm:w-24 drop-shadow-[0_8px_16px_rgba(0,0,0,.5)]" aria-hidden="true"></ember-mon>
+          <sprout-mon class="bob3 absolute -right-5 sm:-right-7 bottom-12 w-14 sm:w-[4.7rem] drop-shadow-[0_8px_16px_rgba(0,0,0,.5)]" aria-hidden="true"></sprout-mon>
+          <straw-hat class="absolute -top-7 left-3 w-12 h-12 sm:w-14 sm:h-14 -rotate-12 drop-shadow-xl" aria-hidden="true"></straw-hat>
+
+          <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 glass rounded-2xl px-4 py-2.5 flex items-center gap-2 text-sm font-semibold whitespace-nowrap">
+            <span class="w-2 h-2 rounded-full bg-teal animate-pulse"></span> Commissions open
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= OCEAN WAVE DIVIDER ================= -->
+  <div class="relative -mt-10 sm:-mt-16 pointer-events-none" aria-hidden="true">
+    <svg class="wave-div" style="height:64px" viewBox="0 0 1440 64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path class="wave-slow" d="M0 34 C180 8 360 8 540 28 C760 52 980 52 1200 30 C1320 18 1400 22 1440 28 L1440 64 L0 64 Z" fill="rgba(43,212,201,.16)"/>
+      <path class="wave" d="M0 42 C200 20 380 60 600 44 C820 28 1020 60 1240 42 C1340 34 1400 38 1440 42 L1440 64 L0 64 Z" fill="rgba(79,224,255,.20)"/>
+    </svg>
+  </div>
+
+  <!-- ================= MARQUEE ================= -->
+  <div class="relative py-3.5 border-y-2 border-white/15 bg-gradient-to-r from-teal/10 via-white/[.04] to-coral/10 overflow-hidden halftone">
+    <div class="marq text-parchment/80">
+      <template v-for="n in 2">
+        <span v-for="(m,i) in c.marquee" :key="n+'-'+i" class="flex items-center font-display font-bold text-lg px-6">
+          {{ m }} <span class="text-gold mx-6">✦</span>
+        </span>
+      </template>
+    </div>
+  </div>
+
+  <!-- ================= ART GALLERY ================= -->
+  <section id="art" class="relative max-w-6xl mx-auto px-5 sm:px-6 py-20 sm:py-28">
+    <koi-mon class="bob hidden lg:block absolute right-2 top-16 w-16 opacity-80" aria-hidden="true"></koi-mon>
+    <div class="reveal max-w-2xl mb-12">
+      <p class="font-script text-2xl text-gold">the gallery</p>
+      <h2 class="font-display font-extrabold text-4xl sm:text-5xl mt-1">{{ c.art.heading }}</h2>
+      <p class="mt-4 text-parchment/75 text-lg">{{ c.art.subheading }}</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="a in c.art.items" :key="a.id" v-reveal v-tilt class="holo-edge lift tilt">
+        <div class="inner glass foil flex flex-col h-full">
+          <div class="relative aspect-[4/5] w-full">
+            <img v-if="a.image" :src="a.image" :alt="a.title" class="absolute inset-0 w-full h-full object-cover" />
+            <div v-else class="holo-ph absolute inset-0 grid place-items-center">
+              <straw-hat class="w-16 h-16 opacity-80"></straw-hat>
+            </div>
+            <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold backdrop-blur"
+                  :class="a.status==='Sold' ? 'bg-black/40 text-parchment/70 border border-white/20' : 'bg-teal/90 text-abyss'">
+              {{ a.status }}
+            </span>
+          </div>
+          <div class="p-5 flex flex-col flex-1">
+            <h3 class="font-display font-bold text-xl">{{ a.title }}</h3>
+            <p class="text-sm text-parchment/60 mt-0.5">{{ a.medium }}</p>
+            <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3 mt-auto">
+              <span class="font-display font-bold text-xl gold-text">{{ a.price }}</span>
+              <a :href="a.link || '#commission'" :target="a.link ? '_blank' : '_self'" rel="noopener"
+                 class="rounded-full px-4 py-2 text-sm font-semibold glass-soft hover:bg-white/10 hover:text-white">
+                {{ a.link ? 'Buy this piece' : 'Ask about it' }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CUSTOM CARDS ================= -->
+  <section id="cards" class="relative px-5 sm:px-6 py-20 sm:py-28">
+    <div class="absolute inset-0 -z-10" style="background:radial-gradient(900px 500px at 50% 0%, rgba(160,107,255,.16), transparent 60%)"></div>
+    <div class="reveal max-w-2xl mx-auto text-center mb-14">
+      <p class="font-script text-2xl text-teal">make it real</p>
+      <h2 class="font-display font-extrabold text-4xl sm:text-5xl mt-1">{{ c.cards.heading }}</h2>
+      <p class="mt-4 text-parchment/75 text-lg">{{ c.cards.subheading }}</p>
+    </div>
+
+    <div class="max-w-5xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="(card,idx) in c.cards.items" :key="card.id" v-reveal class="holo-edge lift tilt" v-tilt>
+        <div class="inner glass foil flex flex-col h-full">
+          <div class="relative aspect-[3/4]">
+            <img v-if="card.image" :src="card.image" :alt="card.title" class="absolute inset-0 w-full h-full object-cover" />
+            <div v-else class="holo-ph absolute inset-0 grid place-items-center">
+              <straw-hat class="w-14 h-14 opacity-80"></straw-hat>
+            </div>
+            <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide
+                         bg-gradient-to-r from-gold to-gold2 text-abyss shadow">{{ card.rarity }}</span>
+          </div>
+          <div class="p-5 flex flex-col flex-1">
+            <h3 class="font-display font-bold text-xl">{{ card.title }}</h3>
+            <p class="text-sm text-parchment/70 mt-1 flex-1">{{ card.description }}</p>
+            <div class="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+              <span class="font-display font-bold text-lg gold-text">{{ card.price }}</span>
+              <a :href="card.link || '#commission'" :target="card.link ? '_blank' : '_self'" rel="noopener"
+                 class="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 hover:bg-white/20">
+                {{ card.link ? 'Order this style' : 'Order yours' }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Process -->
+    <div class="max-w-5xl mx-auto mt-16">
+      <h3 class="reveal text-center font-display font-bold text-2xl sm:text-3xl mb-8">{{ c.cards.process.heading }}</h3>
+      <div class="grid md:grid-cols-3 gap-5">
+        <div v-for="(step,i) in c.cards.process.steps" :key="i" v-reveal class="glass rounded-3xl p-6">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="grid place-items-center w-10 h-10 rounded-xl font-display font-extrabold text-abyss bg-gradient-to-br from-teal to-gold">{{ i+1 }}</span>
+            <h4 class="font-display font-bold text-lg">{{ step.title }}</h4>
+          </div>
+          <p class="text-parchment/75 text-sm leading-relaxed">{{ step.text }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MEET THE CREW (editable characters) ================= -->
+  <section v-if="c.crew" id="crew" class="relative px-5 sm:px-6 py-20 sm:py-28 overflow-hidden">
+    <div class="speedlines opacity-60" aria-hidden="true"></div>
+    <div class="absolute inset-0 -z-10" style="background:radial-gradient(900px 480px at 50% 0%, rgba(43,212,201,.14), transparent 62%)"></div>
+
+    <div class="reveal max-w-2xl mx-auto text-center mb-14 relative">
+      <p class="font-script text-2xl text-teal">{{ c.crew.eyebrow }}</p>
+      <h2 class="font-display font-extrabold text-4xl sm:text-5xl mt-1">{{ c.crew.heading }}</h2>
+      <p class="mt-4 text-parchment/75 text-lg">{{ c.crew.subheading }}</p>
+    </div>
+
+    <div class="max-w-5xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="(m, i) in c.crew.items" :key="m.id || i" v-reveal v-tilt class="holo-edge lift tilt">
+        <div class="inner glass foil flex flex-col h-full">
+          <div class="relative" :class="typeClass(m.type)">
+            <div class="absolute inset-0 halftone opacity-50 z-[1]"></div>
+            <div class="relative aspect-[3/4] overflow-hidden grid place-items-center">
+              <img v-if="m.image" :src="m.image" :alt="m.name" class="absolute inset-0 w-full h-full object-cover" />
+              <component v-else :is="mascotFor(m.type)" class="bob w-36 h-36 relative z-[2] drop-shadow-xl"></component>
+              <div v-if="!m.image" class="absolute bottom-3 left-1/2 -translate-x-1/2 z-[3] text-[11px] font-semibold text-abyss/70 bg-white/45 backdrop-blur px-3 py-1 rounded-full whitespace-nowrap">Add character art in admin</div>
+            </div>
+            <div v-if="m.type" class="absolute top-3 left-3 z-[3] px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide bg-abyss/55 text-parchment backdrop-blur">{{ m.type }}</div>
+            <div v-if="m.hp" class="absolute top-3 right-3 z-[3] font-display font-extrabold text-abyss/80 text-sm">HP {{ m.hp }}</div>
+          </div>
+          <div class="p-5 flex flex-col flex-1">
+            <h3 class="font-display font-bold text-xl">{{ m.name }}</h3>
+            <p v-if="m.role" class="text-sm text-parchment/60 mt-0.5">{{ m.role }}</p>
+            <p v-if="m.blurb" class="text-parchment/75 text-sm mt-3 flex-1">{{ m.blurb }}</p>
+            <div v-if="m.move1 || m.move2" class="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2">
+              <span v-if="m.move1" class="px-2.5 py-1 rounded-lg text-xs font-bold text-abyss" :class="typeClass(m.type)">{{ m.move1 }}</span>
+              <span v-if="m.move2" class="px-2.5 py-1 rounded-lg text-xs font-bold glass-soft">{{ m.move2 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal text-center mt-12">
+      <a :href="commissionLink" class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-semibold text-abyss bg-gradient-to-r from-teal to-gold2 shadow-xl hover:scale-[1.04]">
+        {{ c.crew.ctaText }}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT ================= -->
+  <section id="about" class="max-w-6xl mx-auto px-5 sm:px-6 py-20 sm:py-28">
+    <div class="grid lg:grid-cols-[.8fr_1.2fr] gap-10 lg:gap-14 items-center">
+      <div class="reveal flex justify-center">
+        <div class="holo-edge w-72 h-72 sm:w-80 sm:h-80">
+          <div class="inner glass foil grid place-items-center p-3">
+            <img :src="c.about.image" alt="The artist" class="w-full h-full object-cover rounded-[1.1rem]" />
+          </div>
+        </div>
+      </div>
+      <div class="reveal">
+        <p class="font-script text-2xl text-gold">the artist</p>
+        <h2 class="font-display font-extrabold text-3xl sm:text-4xl mt-1">{{ c.about.heading }}</h2>
+        <div class="mt-5 space-y-4 text-parchment/80 text-lg leading-relaxed">
+          <p v-for="(para,i) in aboutParagraphs" :key="i">{{ para }}</p>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <div v-for="(st,i) in c.about.stats" :key="i" class="glass rounded-2xl px-6 py-4 text-center">
+            <div class="font-display font-extrabold text-3xl gold-text">{{ st.value }}</div>
+            <div class="text-sm text-parchment/65 mt-1">{{ st.label }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= WATCH ================= -->
+  <section id="watch" class="max-w-6xl mx-auto px-5 sm:px-6 py-20 sm:py-28">
+    <div class="reveal text-center max-w-2xl mx-auto mb-12">
+      <p class="font-script text-2xl text-coral">on screen</p>
+      <h2 class="font-display font-extrabold text-4xl sm:text-5xl mt-1">{{ c.watch.heading }}</h2>
+      <p class="mt-4 text-parchment/75 text-lg">{{ c.watch.subheading }}</p>
+    </div>
+
+    <div v-if="watchVideos.length" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-for="(v,i) in watchVideos" :key="i" v-reveal class="holo-edge lift">
+        <div class="inner glass">
+          <div class="aspect-[9/16] w-full bg-black/40">
+            <iframe class="w-full h-full" :src="'https://www.youtube.com/embed/'+v.vid" title="YouTube short"
+                    frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="reveal max-w-xl mx-auto glass rounded-3xl p-10 text-center foil">
+      <straw-hat class="w-16 h-16 mx-auto mb-4"></straw-hat>
+      <p class="text-parchment/80 text-lg">New shorts drop every week — come hang out on the channel.</p>
+    </div>
+
+    <div class="text-center mt-10">
+      <a :href="c.watch.channelUrl" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-2 rounded-full px-7 py-3.5 font-semibold text-abyss bg-gradient-to-r from-coral to-gold2 shadow-xl hover:scale-[1.04]">
+        Watch on YouTube
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= COMMISSION ================= -->
+  <section id="commission" class="px-5 sm:px-6 py-16 sm:py-24">
+    <div class="reveal max-w-4xl mx-auto holo-edge">
+      <div class="inner glass foil relative px-7 sm:px-14 py-14 text-center">
+        <div class="sparks" aria-hidden="true">
+          <span v-for="s in sparks.slice(0,8)" :key="'c'+s.i" class="spark"
+                :style="{ left:s.x+'%', top:s.y+'%', animationDelay:s.d+'s', animationDuration:s.dur+'s' }"></span>
+        </div>
+        <straw-hat class="w-20 h-20 mx-auto mb-5 float"></straw-hat>
+        <h2 class="font-display font-extrabold text-3xl sm:text-5xl">{{ c.commission.heading }}</h2>
+        <p class="mt-5 text-parchment/80 text-lg max-w-2xl mx-auto leading-relaxed">{{ c.commission.body }}</p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a :href="commissionLink"
+             class="inline-flex items-center gap-2 rounded-full px-8 py-4 font-semibold text-abyss bg-gradient-to-r from-gold to-gold2 shadow-xl hover:scale-[1.04] hover:brightness-110">
+            {{ c.commission.ctaText }}
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a v-if="c.commission.email" :href="'mailto:'+c.commission.email" class="text-parchment/80 hover:text-white link-underline">{{ c.commission.email }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-white/10 px-5 sm:px-6 py-12 mt-8">
+    <div class="max-w-6xl mx-auto flex flex-col items-center gap-6 text-center">
+      <div class="flex items-center gap-2.5">
+        <straw-hat class="w-8 h-8"></straw-hat>
+        <span class="font-display font-extrabold text-xl">{{ c.brand.name }}</span>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <a v-for="s in activeSocials" :key="'f'+s.label" :href="s.url" target="_blank" rel="noopener"
+           class="px-4 py-2 rounded-full glass-soft text-sm hover:bg-white/10 hover:text-white">{{ s.label }}</a>
+      </div>
+      <p v-if="c.dedication.show" class="font-script text-2xl text-gold/90 max-w-lg">{{ c.dedication.text }}</p>
+      <p class="text-sm text-parchment/55">© {{ year }} {{ c.brand.name }} · {{ c.footer.text }}</p>
+      <a href="./admin.html" class="text-xs text-parchment/30 hover:text-parchment/60">Studio admin</a>
+    </div>
+  </footer>
+</div>
+
+<script type="module">
+  import { createApp, reactive, ref, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+  import { DEFAULT_CONTENT, clone, subscribeContent, ytId } from './shared.js';
+
+  const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const app = createApp({
+    setup() {
+      const c = reactive(clone(DEFAULT_CONTENT));
+      const menu = ref(false);
+
+      // hydrate from cloud/local, live
+      subscribeContent((data) => { Object.assign(c, data); });
+
+      const sparks = Array.from({ length: 16 }, (_, i) => ({
+        i, x: Math.random() * 100, y: Math.random() * 100,
+        d: +(Math.random() * 5).toFixed(2), dur: +(3 + Math.random() * 3).toFixed(2),
+        sc: +(0.5 + Math.random()).toFixed(2),
+      }));
+
+      const aboutParagraphs = computed(() => (c.about.body || '').split(/\n{2,}/).map(s => s.trim()).filter(Boolean));
+      const activeSocials = computed(() => (c.socials || []).filter(s => s.url && s.url.trim()));
+      const watchVideos = computed(() => (c.watch.videos || []).map(v => ({ vid: ytId(v.id || v.url || v) })).filter(v => v.vid));
+      const commissionLink = computed(() => {
+        if (c.commission.ctaLink) return c.commission.ctaLink;
+        if (c.commission.email) return 'mailto:' + c.commission.email;
+        return c.watch.channelUrl || '#';
+      });
+      const year = new Date().getFullYear();
+
+
+      const typeClass = (t) => ({ water: 'type-water', fire: 'type-fire', grass: 'type-grass' }[(t || '').toLowerCase()] || 'type-water');
+      const mascotFor = (t) => ({ water: 'koi-mon', fire: 'ember-mon', grass: 'sprout-mon' }[(t || '').toLowerCase()] || 'koi-mon');
+
+      return { c, menu, sparks, aboutParagraphs, activeSocials, watchVideos, commissionLink, year, typeClass, mascotFor };
+    },
+  });
+
+  // Strawhat emblem (original art)
+  app.component('straw-hat', {
+    template: `<svg viewBox="0 0 64 46" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="straw hat">
+      <ellipse cx="32" cy="35" rx="30" ry="8.5" fill="#E9B96A"/>
+      <ellipse cx="32" cy="33.5" rx="30" ry="8" fill="#F4D08A"/>
+      <path d="M13 34 C13 17 22 8 32 8 C42 8 51 17 51 34 Z" fill="#F4D08A"/>
+      <path d="M13 34 C13 17 22 8 32 8 C42 8 51 17 51 34 Z" fill="#FFE6AE" opacity=".5"/>
+      <g stroke="#D9A24E" stroke-width="1.1" opacity=".55" fill="none">
+        <path d="M19 31 C24 14 40 14 45 31"/>
+        <path d="M23 31 C27 18 37 18 41 31"/>
+      </g>
+      <path d="M13 30 C21 35 43 35 51 30 L51 26 C43 31 21 31 13 26 Z" fill="#E1483F"/>
+      <path d="M13 30 C21 35 43 35 51 30 L51 28.5 C43 33.5 21 33.5 13 28.5 Z" fill="#C73A33"/>
+    </svg>`,
+  });
+
+  // ---- Original creature mascots (drawn from scratch, brand-owned) ----
+  app.component('koi-mon', {
+    template: `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="water creature">
+      <path d="M92 64 C110 46 114 50 111 64 C114 78 110 82 92 64Z" fill="#2BD4C9"/>
+      <path d="M95 64 C106 54 108 57 107 64 C108 71 106 74 95 64Z" fill="#7cffc4" opacity=".75"/>
+      <ellipse cx="56" cy="64" rx="40" ry="34" fill="#2BD4C9"/>
+      <ellipse cx="56" cy="59" rx="40" ry="31" fill="#4fe0ff" opacity=".5"/>
+      <ellipse cx="56" cy="76" rx="29" ry="18" fill="#cffaf6" opacity=".7"/>
+      <path d="M42 32 C49 18 61 18 66 32 Z" fill="#FF5A5F"/>
+      <path d="M45 31 C50 22 58 22 62 31 Z" fill="#FFC24B" opacity=".8"/>
+      <circle cx="42" cy="60" r="10" fill="#0B1733"/>
+      <circle cx="45.5" cy="56.5" r="3.4" fill="#fff"/>
+      <circle cx="40" cy="63" r="1.5" fill="#fff" opacity=".8"/>
+      <circle cx="30" cy="72" r="4.5" fill="#FF5A5F" opacity=".5"/>
+      <path d="M56 96 C51 107 63 107 60 96Z" fill="#2BD4C9"/>
+      <path d="M88 28 l2.2 6.4 6.4 2.2 -6.4 2.2 -2.2 6.4 -2.2 -6.4 -6.4 -2.2 6.4 -2.2Z" fill="#FFC24B"/>
+    </svg>`,
+  });
+
+  app.component('ember-mon', {
+    template: `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="fire creature">
+      <path d="M94 74 C114 62 110 38 96 44 C107 58 90 62 94 74Z" fill="#FF5A5F"/>
+      <path d="M96 69 C108 61 106 47 98 50 C105 59 92 62 96 69Z" fill="#FFC24B"/>
+      <path d="M30 48 L23 24 L47 42Z" fill="#F4A23C"/>
+      <path d="M78 48 L85 24 L61 42Z" fill="#F4A23C"/>
+      <path d="M31 45 L28 33 L42 43Z" fill="#FF5A5F" opacity=".6"/>
+      <path d="M77 45 L80 33 L66 43Z" fill="#FF5A5F" opacity=".6"/>
+      <ellipse cx="54" cy="70" rx="36" ry="31" fill="#F4A23C"/>
+      <ellipse cx="54" cy="65" rx="36" ry="28" fill="#FFC24B" opacity=".55"/>
+      <ellipse cx="54" cy="81" rx="23" ry="14" fill="#FDF6E9" opacity=".7"/>
+      <circle cx="43" cy="64" r="6.5" fill="#0B1733"/>
+      <circle cx="65" cy="64" r="6.5" fill="#0B1733"/>
+      <circle cx="45" cy="61.5" r="2.2" fill="#fff"/>
+      <circle cx="67" cy="61.5" r="2.2" fill="#fff"/>
+      <path d="M50 72 h8 l-4 5Z" fill="#C73A33"/>
+      <circle cx="35" cy="75" r="4.5" fill="#FF5A5F" opacity=".55"/>
+      <circle cx="73" cy="75" r="4.5" fill="#FF5A5F" opacity=".55"/>
+    </svg>`,
+  });
+
+  app.component('sprout-mon', {
+    template: `<svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="grass creature">
+      <path d="M60 30 C60 12 82 8 86 18 C88 31 70 35 60 33Z" fill="#7cffc4"/>
+      <path d="M60 30 C60 13 40 9 36 19 C34 32 50 35 60 33Z" fill="#2BD4C9"/>
+      <path d="M60 33 L60 52" stroke="#1f9e7a" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="60" cy="73" rx="34" ry="29" fill="#7cffc4"/>
+      <ellipse cx="60" cy="68" rx="34" ry="26" fill="#d6ffec" opacity=".5"/>
+      <ellipse cx="60" cy="81" rx="21" ry="13" fill="#FDF6E9" opacity=".6"/>
+      <circle cx="49" cy="67" r="6.5" fill="#0B1733"/>
+      <circle cx="71" cy="67" r="6.5" fill="#0B1733"/>
+      <circle cx="51" cy="64.5" r="2.2" fill="#fff"/>
+      <circle cx="73" cy="64.5" r="2.2" fill="#fff"/>
+      <path d="M54 77 q6 6 12 0" stroke="#1f7a5e" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <circle cx="41" cy="75" r="4.5" fill="#FF5A5F" opacity=".45"/>
+      <circle cx="79" cy="75" r="4.5" fill="#FF5A5F" opacity=".45"/>
+    </svg>`,
+  });
+
+
+  // v-reveal directive — just tags the element; CSS does the load-in.
+  app.directive('reveal', { mounted(el) { el.classList.add('reveal'); } });
+
+  // v-tilt directive (pointer-based 3D tilt, skipped under reduced motion / touch)
+  app.directive('tilt', {
+    mounted(el) {
+      if (RM || window.matchMedia('(pointer:coarse)').matches) return;
+      const move = (e) => {
+        const r = el.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        el.style.transform = `perspective(800px) rotateX(${(-py*7).toFixed(2)}deg) rotateY(${(px*9).toFixed(2)}deg) translateY(-7px)`;
+      };
+      const leave = () => { el.style.transform = ''; };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerleave', leave);
+      el._tilt = { move, leave };
+    },
+    unmounted(el) {
+      if (el._tilt) { el.removeEventListener('pointermove', el._tilt.move); el.removeEventListener('pointerleave', el._tilt.leave); }
+    },
+  });
+
+  app.mount('#app');
+</script>
+</body>
+</html>
