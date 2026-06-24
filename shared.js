@@ -428,3 +428,84 @@ export async function onAuth(cb) {
   cb(sessionStorage.getItem("gamingish_local_auth") === "1");
   return () => {};
 }
+
+// ---- Account management (cloud mode only) -----------------------
+
+// The email of the currently signed-in user (for pre-filling the form).
+export async function currentUserEmail() {
+  if (!isFirebaseConfigured()) return "";
+  const { auth } = await fb();
+  return (auth.currentUser && auth.currentUser.email) || "";
+}
+
+// Re-authenticate with the current password. Sensitive changes (email /
+// password) require this, and Firebase rejects them otherwise.
+async function reauth(currentPassword) {
+  const { auth, authMod } = await fb();
+  const user = auth.currentUser;
+  if (!user) throw new Error("not-signed-in");
+  const cred = authMod.EmailAuthProvider.credential(user.email, currentPassword);
+  await authMod.reauthenticateWithCredential(user, cred);
+  return { auth, authMod, user };
+}
+
+function authMessage(e) {
+  const code = (e && e.code) || "";
+  if (code === "auth/wrong-password" || code === "auth/invalid-credential")
+    return "Current password is incorrect.";
+  if (code === "auth/invalid-email") return "That email address isn't valid.";
+  if (code === "auth/email-already-in-use") return "That email is already in use.";
+  if (code === "auth/weak-password") return "Password should be at least 6 characters.";
+  if (code === "auth/too-many-requests") return "Too many attempts. Try again in a bit.";
+  if (code === "auth/requires-recent-login") return "Please sign out and back in, then try again.";
+  return (e && e.message) || "Something went wrong.";
+}
+
+// Change password: verify current password, then set the new one.
+export async function changePassword(currentPassword, newPassword) {
+  if (!isFirebaseConfigured())
+    return { ok: false, error: "Connect Firebase first to manage the account." };
+  try {
+    const { authMod, user } = await reauth(currentPassword);
+    await authMod.updatePassword(user, newPassword);
+    return { ok: true, message: "Password updated." };
+  } catch (e) {
+    return { ok: false, error: authMessage(e) };
+  }
+}
+
+// Change email: verify current password, then send a confirmation link to
+// the NEW address. The email changes only after that link is clicked
+// (this is the modern, secure Firebase flow).
+export async function changeEmail(currentPassword, newEmail) {
+  if (!isFirebaseConfigured())
+    return { ok: false, error: "Connect Firebase first to manage the account." };
+  try {
+    const { authMod, user } = await reauth(currentPassword);
+    if (authMod.verifyBeforeUpdateEmail) {
+      await authMod.verifyBeforeUpdateEmail(user, newEmail);
+      return {
+        ok: true,
+        message:
+          "Confirmation link sent to " + newEmail + ". Open it from that inbox to finish the change, then log in with the new email.",
+      };
+    }
+    await authMod.updateEmail(user, newEmail);
+    return { ok: true, message: "Email updated to " + newEmail + "." };
+  } catch (e) {
+    return { ok: false, error: authMessage(e) };
+  }
+}
+
+// Send a password-reset email (useful if the password is forgotten).
+export async function sendReset(email) {
+  if (!isFirebaseConfigured())
+    return { ok: false, error: "Connect Firebase first to manage the account." };
+  try {
+    const { auth, authMod } = await fb();
+    await authMod.sendPasswordResetEmail(auth, email);
+    return { ok: true, message: "Reset link sent to " + email + "." };
+  } catch (e) {
+    return { ok: false, error: authMessage(e) };
+  }
+}
