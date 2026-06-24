@@ -226,6 +226,12 @@ export const DEFAULT_CONTENT = {
     ctaText: "Start a commission",
     ctaLink: "",
     email: "",
+    formEnabled: true,
+    formHeading: "Request a commission",
+    formNote: "Fill this out and I'll get back to you with a quote and timeline.",
+    types: ["Custom card", "Original art", "Both", "Something else"],
+    successMessage: "Thank you! Your request is on its way \u2014 I'll be in touch soon. \uD83C\uDF0A",
+    notifyEndpoint: "",
   },
   socials: [
     { label: "YouTube", url: "https://www.youtube.com/@Gaming_ISH/shorts" },
@@ -508,4 +514,127 @@ export async function sendReset(email) {
   } catch (e) {
     return { ok: false, error: authMessage(e) };
   }
+}
+
+// =============================================================
+//  COMMISSION REQUESTS — public submits, admin reads/manages
+// =============================================================
+const REQUESTS_COL = "requests";
+const REQ_KEY = "gamingish_requests_v1";
+
+// A visitor submits the commission form. Saves to Firestore (so it shows
+// in the admin inbox on any device). Falls back to localStorage in local
+// mode so it still "works" for testing.
+export async function submitRequest(data) {
+  const payload = {
+    name: String(data.name || "").slice(0, 120),
+    email: String(data.email || "").slice(0, 160),
+    type: String(data.type || "").slice(0, 80),
+    budget: String(data.budget || "").slice(0, 80),
+    message: String(data.message || "").slice(0, 4000),
+    status: "new",
+  };
+  if (!payload.name || !payload.email || !payload.message) {
+    return { ok: false, error: "Please fill in your name, email, and a message." };
+  }
+  if (isFirebaseConfigured()) {
+    try {
+      const { db, fs } = await fb();
+      payload.createdAt = fs.serverTimestamp();
+      await fs.addDoc(fs.collection(db, REQUESTS_COL), payload);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: "Could not send right now. Please try again." };
+    }
+  }
+  try {
+    const arr = JSON.parse(localStorage.getItem(REQ_KEY) || "[]");
+    payload.id = "r" + Date.now();
+    payload.createdAt = Date.now();
+    arr.unshift(payload);
+    localStorage.setItem(REQ_KEY, JSON.stringify(arr));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: "Could not save request." };
+  }
+}
+
+// Optional: also forward the request to a Formspree (or similar) endpoint
+// so she gets an email. Fire-and-forget; never blocks the submit.
+export async function forwardRequest(endpoint, data) {
+  if (!endpoint) return;
+  try {
+    await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(data),
+    });
+  } catch (e) {
+    /* non-fatal */
+  }
+}
+
+// Admin: live list of requests, newest first.
+export async function subscribeRequests(cb) {
+  if (isFirebaseConfigured()) {
+    try {
+      const { db, fs } = await fb();
+      const q = fs.query(fs.collection(db, REQUESTS_COL), fs.orderBy("createdAt", "desc"));
+      return fs.onSnapshot(
+        q,
+        (snap) => {
+          const out = [];
+          snap.forEach((d) => {
+            const v = d.data();
+            out.push({
+              id: d.id,
+              ...v,
+              _ts: v.createdAt && v.createdAt.toMillis ? v.createdAt.toMillis() : 0,
+            });
+          });
+          cb(out);
+        },
+        (e) => {
+          console.warn("requests subscribe failed:", e);
+          cb([]);
+        }
+      );
+    } catch (e) {
+      console.warn("requests subscribe error:", e);
+    }
+  }
+  try {
+    const arr = JSON.parse(localStorage.getItem(REQ_KEY) || "[]");
+    cb(arr.map((r) => ({ ...r, _ts: r.createdAt || 0 })));
+  } catch {
+    cb([]);
+  }
+  return () => {};
+}
+
+export async function updateRequestStatus(id, status) {
+  if (isFirebaseConfigured()) {
+    const { db, fs } = await fb();
+    await fs.updateDoc(fs.doc(db, REQUESTS_COL, id), { status });
+    return { ok: true };
+  }
+  try {
+    const arr = JSON.parse(localStorage.getItem(REQ_KEY) || "[]");
+    const i = arr.findIndex((r) => r.id === id);
+    if (i >= 0) { arr[i].status = status; localStorage.setItem(REQ_KEY, JSON.stringify(arr)); }
+    return { ok: true };
+  } catch { return { ok: false }; }
+}
+
+export async function deleteRequest(id) {
+  if (isFirebaseConfigured()) {
+    const { db, fs } = await fb();
+    await fs.deleteDoc(fs.doc(db, REQUESTS_COL, id));
+    return { ok: true };
+  }
+  try {
+    const arr = JSON.parse(localStorage.getItem(REQ_KEY) || "[]").filter((r) => r.id !== id);
+    localStorage.setItem(REQ_KEY, JSON.stringify(arr));
+    return { ok: true };
+  } catch { return { ok: false }; }
 }
