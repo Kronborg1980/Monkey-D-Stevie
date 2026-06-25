@@ -3,6 +3,8 @@
 //  Used by both index.html and admin.html so they never drift.
 // =============================================================
 import { firebaseConfig, LOCAL_PASSCODE } from "./config.js";
+import * as CFG from "./config.js";
+const YT_WORKER = (CFG && CFG.YT_WORKER) || "";
 
 const STORE_KEY = "gamingish_site_v1";
 const DOC_PATH = ["site", "content"]; // Firestore collection/doc
@@ -218,7 +220,10 @@ export const DEFAULT_CONTENT = {
     heading: "Watch me draw",
     subheading: "New shorts every week over on YouTube.",
     channelUrl: "https://www.youtube.com/@Gaming_ISH/shorts",
-    videos: [],
+    useFeed: true,        // auto-pull latest from YouTube via the Worker
+    feedType: "short",    // "short" | "video" | "live" | "any"
+    feedCount: 1,         // how many to show
+    videos: [],           // manual fallback (used if the feed is off/empty)
   },
   commission: {
     heading: "Bring your character to life",
@@ -637,4 +642,48 @@ export async function deleteRequest(id) {
     localStorage.setItem(REQ_KEY, JSON.stringify(arr));
     return { ok: true };
   } catch { return { ok: false }; }
+}
+
+// =============================================================
+//  YOUTUBE FEED — via the Cloudflare Worker (CORS-safe)
+//  Reads the channel RSS, classifies each entry by URL, and
+//  returns the newest items of the requested type.
+// =============================================================
+export async function fetchYouTube(opts) {
+  const type = (opts && opts.type) || "short";   // short | video | live | any
+  const count = Math.max(1, Math.min(12, (opts && opts.count) || 1));
+  if (!YT_WORKER) return [];
+  try {
+    const res = await fetch(YT_WORKER.replace(/\/+$/, "") + "/api/youtube", { cache: "no-store" });
+    if (!res.ok) return [];
+    const xml = await res.text();
+    const doc = new DOMParser().parseFromString(xml, "text/xml");
+    if (doc.getElementsByTagName("parsererror").length) return [];
+
+    const entries = Array.from(doc.getElementsByTagName("entry"));
+    const items = entries
+      .map((e) => {
+        // <id> is "yt:video:VIDEOID" — most reliable, namespace-free.
+        const idText = (e.getElementsByTagName("id")[0] || {}).textContent || "";
+        const id = idText.split(":").pop();
+        const title = (e.getElementsByTagName("title")[0] || {}).textContent || "";
+        let href = "";
+        const links = e.getElementsByTagName("link");
+        for (let i = 0; i < links.length; i++) {
+          if (links[i].getAttribute("rel") === "alternate") { href = links[i].getAttribute("href") || ""; break; }
+        }
+        let vtype = "video";
+        if (/\/shorts\//.test(href)) vtype = "short";
+        else if (/\/live\//.test(href)) vtype = "live";
+        return { id, title, type: vtype, url: href };
+      })
+      .filter((v) => v.id);
+
+    const filtered = type === "any" ? items : items.filter((v) => v.type === type);
+    // Never leave the section empty: if nothing matches the type, show newest of any.
+    const pool = filtered.length ? filtered : items;
+    return pool.slice(0, count);
+  } catch (e) {
+    return [];
+  }
 }
