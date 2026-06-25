@@ -480,11 +480,12 @@
       <p class="mt-4 text-parchment/75 text-lg">{{ c.watch.subheading }}</p>
     </div>
 
-    <div v-if="watchVideos.length" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="(v,i) in watchVideos" :key="i" v-reveal class="holo-edge lift">
+    <div v-if="shownVideos.length" class="flex flex-wrap justify-center gap-6">
+      <div v-for="(v,i) in shownVideos" :key="v.id+'-'+i" v-reveal class="holo-edge lift"
+           :class="v.type === 'short' ? 'w-full max-w-[300px]' : 'w-full max-w-2xl'">
         <div class="inner glass">
-          <div class="aspect-[9/16] w-full bg-black/40">
-            <iframe class="w-full h-full" :src="'https://www.youtube.com/embed/'+v.vid" title="YouTube short"
+          <div class="w-full bg-black/40" :style="{ aspectRatio: aspectFor(v.type) }">
+            <iframe class="w-full h-full" :src="'https://www.youtube.com/embed/'+v.id" :title="v.title || 'YouTube video'"
                     frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
           </div>
         </div>
@@ -589,7 +590,7 @@
 
 <script type="module">
   import { createApp, reactive, ref, computed } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
-  import { DEFAULT_CONTENT, clone, subscribeContent, ytId, submitRequest, forwardRequest } from './shared.js';
+  import { DEFAULT_CONTENT, clone, subscribeContent, ytId, submitRequest, forwardRequest, fetchYouTube } from './shared.js';
 
   const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -599,7 +600,7 @@
       const menu = ref(false);
 
       // hydrate from cloud/local, live
-      subscribeContent((data) => { Object.assign(c, data); if (!req.type && c.commission && c.commission.types && c.commission.types.length) req.type = c.commission.types[0]; });
+      subscribeContent((data) => { Object.assign(c, data); if (!req.type && c.commission && c.commission.types && c.commission.types.length) req.type = c.commission.types[0]; if (!feedLoaded) { feedLoaded = true; loadFeed(); } });
 
       const sparks = Array.from({ length: 16 }, (_, i) => ({
         i, x: Math.random() * 100, y: Math.random() * 100,
@@ -609,11 +610,31 @@
 
       const aboutParagraphs = computed(() => (c.about.body || '').split(/\n{2,}/).map(s => s.trim()).filter(Boolean));
       const activeSocials = computed(() => (c.socials || []).filter(s => s.url && s.url.trim()));
-      const watchVideos = computed(() => (c.watch.videos || []).map(v => ({ vid: ytId(v.id || v.url || v) })).filter(v => v.vid));
+      // Manual fallback videos (admin "videos" list), shape {id, type}.
+      const manualVideos = computed(() => (c.watch.videos || [])
+        .map(v => ({ id: ytId(v.id || v.url || v), type: (v.type || 'short') }))
+        .filter(v => v.id));
+
+      // Auto feed pulled from the Cloudflare Worker.
+      const feedVideos = ref([]);
+      let feedLoaded = false;
+      const loadFeed = async () => {
+        if (!c.watch || c.watch.useFeed === false) { feedVideos.value = []; return; }
+        feedVideos.value = await fetchYouTube({ type: c.watch.feedType || 'short', count: c.watch.feedCount || 1 });
+      };
+
+      // What actually renders: feed first, then manual fallback.
+      const shownVideos = computed(() => {
+        if (c.watch && c.watch.useFeed !== false && feedVideos.value.length) return feedVideos.value;
+        return manualVideos.value;
+      });
+      const aspectFor = (t) => (t === 'short' ? '9 / 16' : '16 / 9');
+
       const commissionLink = computed(() => {
+        // Always scroll to the on-page form unless she sets an explicit link/email.
         if (c.commission.ctaLink) return c.commission.ctaLink;
         if (c.commission.email) return 'mailto:' + c.commission.email;
-        return c.watch.channelUrl || '#';
+        return '#commission';
       });
       const year = new Date().getFullYear();
 
@@ -640,7 +661,7 @@
         reqError.value = ''; reqState.value = 'idle';
       };
 
-      return { c, menu, sparks, aboutParagraphs, activeSocials, watchVideos, commissionLink, year, typeClass, mascotFor,
+      return { c, menu, sparks, aboutParagraphs, activeSocials, shownVideos, aspectFor, commissionLink, year, typeClass, mascotFor,
                req, reqState, reqError, submitReq, resetReq };
     },
   });
@@ -746,4 +767,4 @@
   app.mount('#app');
 </script>
 </body>
-</html> 
+</html>
