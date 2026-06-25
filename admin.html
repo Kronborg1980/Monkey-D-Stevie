@@ -421,8 +421,31 @@
             <label class="block"><span class="lbl">Subheading</span><input v-model="c.watch.subheading" class="field" /></label>
           </div>
           <label class="block"><span class="lbl">Channel link</span><input v-model="c.watch.channelUrl" class="field" /></label>
+
+          <div class="glass-soft rounded-2xl p-4 space-y-3">
+            <label class="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" v-model="c.watch.useFeed" class="w-4 h-4 accent-teal" /> Auto-show my latest from YouTube
+            </label>
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="block"><span class="lbl">Show which type</span>
+                <select v-model="c.watch.feedType" class="field">
+                  <option value="short">Shorts</option>
+                  <option value="video">Regular videos</option>
+                  <option value="live">Live streams</option>
+                  <option value="any">Any (newest)</option>
+                </select>
+              </label>
+              <label class="block"><span class="lbl">How many to show</span>
+                <input type="number" min="1" max="12" v-model.number="c.watch.feedCount" class="field" />
+              </label>
+            </div>
+            <p class="text-xs text-parchment/55 leading-relaxed">
+              When this is on, the site automatically shows your newest videos of the chosen type — you don't have to add anything. Turn it off to hand-pick videos below instead.
+            </p>
+          </div>
+
           <div>
-            <span class="lbl">Featured videos (paste any YouTube / Shorts link)</span>
+            <span class="lbl">Hand-picked videos (used only when auto is off, or as a backup)</span>
             <div class="space-y-2">
               <div v-for="(v,i) in c.watch.videos" :key="i" class="flex items-center gap-2">
                 <input v-model="v.id" class="field" placeholder="https://youtube.com/shorts/…" />
@@ -722,4 +745,4 @@
   }).mount('#app');
 </script>
 </body>
-</html> 
+</html>
